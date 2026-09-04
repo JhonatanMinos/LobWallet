@@ -16,7 +16,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ApiService::class, function () {
+    return new ApiService(
+        config('services.api.url')
+    );
+});
+
     }
 
     /**
