@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transactions', function (Blueprint $table) {
-            $table->id();
+        Schema::create('account_owner', function (Blueprint $table) {
             $table->foreignId('account_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('motion', 20);
-            $table->decimal('amount', 9, 2);
-            $table->timestamps();
+    $table->foreignId('owner_id')->constrained()->cascadeOnDelete();
+
+    $table->primary(['account_id', 'owner_id']);
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transactions');
+         Schema::dropIfExists('account_owner');
     }
 };

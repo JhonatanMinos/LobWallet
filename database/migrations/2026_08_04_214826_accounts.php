@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('gifd_cards', function (Blueprint $table) {
+        Schema::create('accounts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('tarjeta', 100);
-            $table->tinyInteger('status');
+            $table->string('account');
+            $table->decimal('balance',9,2);
+            $table->boolean('activo')->default(true);
+            $table->string('pin')->nullable();
+            $table->string('closes')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('gifd_cards');
+         Schema::dropIfExists('accounts');
     }
 };
