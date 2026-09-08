@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -57,5 +58,21 @@ class User extends Authenticatable implements PasskeyUser
     public function transactions(): HasMany
     {
         return $this->hasMany(transactions::class);
+    }
+
+    /**
+     * Relación: Un usuario tiene muchos propietarios
+     */
+    public function owners(): HasMany
+    {
+        return $this->hasMany(Owner::class);
+    }
+
+    /**
+     * Relación: Un usuario tiene muchas cuentas (a través de owners)
+     */
+    public function accounts(): HasManyThrough
+    {
+        return $this->hasManyThrough(Account::class, Owner::class);
     }
 }

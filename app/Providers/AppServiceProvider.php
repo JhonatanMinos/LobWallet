@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Native\Mobile\Facades\System;
+use App\Services\ApiService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,11 +18,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ApiService::class, function () {
-    return new ApiService(
-        config('services.api.url')
-    );
-});
-
+            return new ApiService(
+                config('services.api.url')
+            );
+        });
     }
 
     /**
@@ -43,14 +43,15 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
+        Password::defaults(
+            fn(): ?Password => app()->isProduction()
+                ? Password::min(12)
                 ->mixedCase()
                 ->letters()
                 ->numbers()
                 ->symbols()
                 ->uncompromised()
-            : null,
+                : null,
         );
     }
 }

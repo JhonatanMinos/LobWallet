@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -9,51 +11,83 @@ class ApiService
 {
     public function __construct(
         protected string $baseUrl,
-    ) {}
+    ) {
+        $this->baseUrl = rtrim(config('services.api.url'), '/');
+    }
 
-    public function get(string $endpoint, ?string $token = null): array
+    protected function request(): PendingRequest
     {
-        $request = Http::baseUrl($this->baseUrl)
+        return Http::baseUrl($this->baseUrl)
             ->acceptJson()
-            ->timeout(30);
+            ->timeout(30)
+            ->connectTimeout(10);
+    }
+
+    public function get(
+        string $endpoint,
+        ?string $token = null,
+        array $query = [],
+    ): array {
+        $request = $this->request();
 
         if ($token) {
-            $request->withToken($token);
+            $request = $request->withToken($token);
         }
 
-        $response = $request->get($endpoint);
+        $response = $request->get(
+            $endpoint,
+            $query
+        );
 
-        if ($response->failed()) {
-            throw new RuntimeException(
-                "API Error {$response->status()}: {$response->body()}"
-            );
-        }
-
-        return $response->json();
+        return $this->handleResponse($response);
     }
 
     public function post(
         string $endpoint,
         array $data = [],
-        ?string $token = null
+        ?string $token = null,
     ): array {
-        $request = Http::baseUrl($this->baseUrl)
-            ->acceptJson()
-            ->timeout(30);
+        $request = $this->request();
 
         if ($token) {
-            $request->withToken($token);
+            $request = $request->withToken($token);
         }
 
-        $response = $request->post($endpoint, $data);
+        $response = $request->post(
+            $endpoint,
+            $data
+        );
 
-        if ($response->failed()) {
+        return $this->handleResponse($response);
+    }
+
+    protected function handleResponse(
+        Response $response
+    ): array {
+        if ($response->successful()) {
+            return $response->json() ?? [];
+        }
+
+        if ($response->status() === 401) {
             throw new RuntimeException(
-                "API Error {$response->status()}: {$response->body()}"
+                'UNAUTHENTICATED'
             );
         }
 
-        return $response->json();
+        if ($response->status() === 422) {
+            throw new RuntimeException(
+                'VALIDATION_ERROR'
+            );
+        }
+
+        if ($response->serverError()) {
+            throw new RuntimeException(
+                'SERVER_ERROR'
+            );
+        }
+
+        throw new RuntimeException(
+            "API_ERROR_{$response->status()}"
+        );
     }
 }
-

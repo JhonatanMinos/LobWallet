@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use RuntimeException;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class AuthService
@@ -19,19 +22,41 @@ class AuthService
             'password' => $password,
         ]);
 
-        $token = $response['token'];
+        if (
+            !isset($response['token']) ||
+            !isset($response['user'])
+        ) {
+            throw new RuntimeException(
+                'Respuesta de autenticación inválida.'
+            );
+        }
 
-        Storage::disk('local')->put(
-            'auth/token',
-            $token
-        );
-
-        Storage::disk('local')->put(
-            'auth/user.json',
-            json_encode($response['user'])
-        );
+        $this->storeToken($response['token']);
+        $this->storeUser($response['user']);
 
         return $response['user'];
+    }
+
+    /**
+     * Método utilizado por Fortify.
+     *
+     * Fortify necesita un User de Laravel o null.
+     */
+    public function authenticateForFortify(
+        Request $request
+    ): ?User {
+        $email = $request->string('email')->toString();
+        $password = $request->string('password')->toString();
+
+        try {
+            $apiUser = $this->login(
+                $email,
+                $password
+            );
+            return $this->syncLocalUser($apiUser);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function token(): ?string
@@ -45,13 +70,17 @@ class AuthService
 
     public function user(): ?array
     {
-        if (!Storage::disk('local')->exists('auth/user.json')) {
+        $disk = Storage::disk('local');
+
+        if (!$disk->exists('auth/user.json')) {
             return null;
         }
 
         return json_decode(
-            Storage::disk('local')->get('auth/user.json'),
-            true
+            $disk->get('auth/user.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
         );
     }
 
@@ -65,7 +94,61 @@ class AuthService
 
     public function isAuthenticated(): bool
     {
-        return $this->token() !== null;
+        $token = $this->token();
+
+        if (!$token) {
+            return false;
+        }
+
+        try {
+            $this->me($token);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Guarda el token remoto.
+     */
+    private function storeToken(string $token): void
+    {
+        Storage::disk('local')->put(
+            'auth/token',
+            $token
+        );
+    }
+
+    /**
+     * Guarda información del usuario remoto.
+     */
+    private function storeUser(array $user): void
+    {
+        Storage::disk('local')->put(
+            'auth/user.json',
+            json_encode(
+                $user,
+                JSON_THROW_ON_ERROR
+            )
+        );
+    }
+
+    /**
+     * Sincroniza el usuario remoto con el User local
+     * utilizado por Laravel/Fortify.
+     */
+    private function syncLocalUser(array $apiUser): User
+    {
+        return User::updateOrCreate(
+            [
+                'remote_id' => $apiUser['id'],
+            ],
+            [
+                'name' => $apiUser['name'],
+                'email' => $apiUser['email'],
+                'movil' => $apiUser['movil'] ?? null,
+            ]
+        );
     }
 }
-
