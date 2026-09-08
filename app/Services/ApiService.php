@@ -12,13 +12,14 @@ class ApiService
     public function __construct(
         protected string $baseUrl,
     ) {
-        $this->baseUrl = rtrim(config('services.api.url'), '/');
+        $this->baseUrl = rtrim($baseUrl, '/');
     }
 
     protected function request(): PendingRequest
     {
         return Http::baseUrl($this->baseUrl)
             ->acceptJson()
+        ->asJson()
             ->timeout(30)
             ->connectTimeout(10);
     }

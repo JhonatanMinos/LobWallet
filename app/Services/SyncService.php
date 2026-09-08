@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\MobileSession;
 use Illuminate\Support\Facades\DB;
 
 class SyncService
@@ -16,76 +17,81 @@ class SyncService
         $token = $this->auth->token();
 
         if (!$token) {
-            throw new \RuntimeException(
-                'Usuario no autenticado.'
-            );
+            throw new \RuntimeException('Usuario no autenticado.');
         }
 
-        $lastSync = $this->lastSync();
+        $user = $this->auth->user();
+
+        $session = MobileSession::where('user_id', $user['id'])->first();
+
+        $lastSync = $session?->last_sync_at;
 
         $response = $this->api->get(
             '/sync?since=' . urlencode($lastSync ?? ''),
             $token
         );
 
-        DB::transaction(function () use ($response) {
+        DB::transaction(function () use ($response, $user) {
 
-            foreach ($response['customers'] ?? [] as $customer) {
-                DB::table('customers')->updateOrInsert(
+            foreach ($response['accounts'] ?? [] as $account) {
+                DB::table('accounts')->updateOrInsert(
                     [
-                        'id' => $customer['id'],
+                        'id' => $account['id'],
                     ],
                     [
-                        'name' => $customer['name'],
-                        'email' => $customer['email'],
-                        'updated_at' => $customer['updated_at'],
+                        'account' => $account['cuenta'],
+                        'balance' => $account['saldo'],
+                        'activo' => $account['estatus'],
+                        'pin' => $account['pin'] ?? null,
+                        'closes' => $account['cierre'] ?? null,
+                        'updated_at' => $account['updated_at'],
                     ]
                 );
             }
 
-            foreach ($response['products'] ?? [] as $product) {
-                DB::table('products')->updateOrInsert(
+            foreach ($response['cards'] ?? [] as $card) {
+                DB::table('cards')->updateOrInsert(
                     [
-                        'id' => $product['id'],
+                        'id' => $card['id'],
                     ],
                     [
-                        'name' => $product['name'],
-                        'price' => $product['price'],
-                        'updated_at' => $product['updated_at'],
+                        'account_id' => $card['account_id'],
+                        'card' => $card['tarjeta'],
+                        'status' => $card['estatus'],
                     ]
                 );
             }
+
+            foreach ($response['transaction'] ?? [] as $transaction) {
+                DB::table('transactions')->updateOrInsert(
+                    [
+                        'id' => $transaction['id'],
+                    ],
+                    [
+                        'account_id' => $transaction['account_id'],
+                        'user_id' => $transaction['user_id'],
+                        'motion' => $transaction['movimiento'],
+                        'amount' => $transaction['monto'],
+                    ]
+                );
+            }
+
+            MobileSession::updateOrCreate(
+                [
+                    'user_id' => $user['id'],
+                ],
+                [
+                    'email' => $user['email'],
+                    'authenticated_at' => now(),
+                    'last_sync_at' => $response['sync_timestamp'],
+                ]
+            );
         });
-
-        $this->saveLastSync(
-            $response['sync_timestamp']
-        );
 
         return [
             'success' => true,
             'timestamp' => $response['sync_timestamp'],
         ];
-    }
-
-    protected function lastSync(): ?string
-    {
-        $value = DB::table('sync_state')
-            ->where('key', 'last_sync')
-            ->value('value');
-
-        return $value;
-    }
-
-    protected function saveLastSync(string $timestamp): void
-    {
-        DB::table('sync_state')->updateOrInsert(
-            [
-                'key' => 'last_sync',
-            ],
-            [
-                'value' => $timestamp,
-            ]
-        );
     }
 }
 

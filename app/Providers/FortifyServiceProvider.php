@@ -52,7 +52,7 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::authenticateUsing(function (Request $request) {
             return app(AuthService::class)
-                ->authenticateForFortify($request);
+            ->authenticateForFortify($request);
         });
     }
 

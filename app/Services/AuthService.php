@@ -6,6 +6,7 @@ use RuntimeException;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
@@ -53,9 +54,12 @@ class AuthService
                 $email,
                 $password
             );
+
             return $this->syncLocalUser($apiUser);
-        } catch (\Throwable) {
-            return null;
+        } catch (\Throwable $e) {
+            report($e);
+
+        return null;
         }
     }
 
@@ -140,15 +144,16 @@ class AuthService
      */
     private function syncLocalUser(array $apiUser): User
     {
-        return User::updateOrCreate(
-            [
-                'remote_id' => $apiUser['id'],
-            ],
-            [
-                'name' => $apiUser['name'],
-                'email' => $apiUser['email'],
-                'movil' => $apiUser['movil'] ?? null,
-            ]
-        );
+        $user = User::where('email', $apiUser['email'])->first();
+        if (!$user) {
+            $user = new User();
+        }
+
+        $user->name = $apiUser['name'];
+        $user->email = $apiUser['email'];
+
+        $user->save();
+
+        return $user;
     }
 }
