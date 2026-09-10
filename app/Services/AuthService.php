@@ -149,6 +149,7 @@ class AuthService
             $user = new User();
         }
 
+        $user->id = $apiUser['id'];
         $user->name = $apiUser['name'];
         $user->email = $apiUser['email'];
 

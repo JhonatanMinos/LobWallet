@@ -31,7 +31,9 @@ class SyncService
             $token
         );
 
+
         DB::transaction(function () use ($response, $user) {
+
 
             foreach ($response['accounts'] ?? [] as $account) {
                 DB::table('accounts')->updateOrInsert(
@@ -44,7 +46,8 @@ class SyncService
                         'activo' => $account['estatus'],
                         'pin' => $account['pin'] ?? null,
                         'closes' => $account['cierre'] ?? null,
-                        'updated_at' => $account['updated_at'],
+                        'created_at' => $account['created_at'],
+                        'updated_at' => $account['updated_at']
                     ]
                 );
             }
@@ -58,6 +61,8 @@ class SyncService
                         'account_id' => $card['account_id'],
                         'card' => $card['tarjeta'],
                         'status' => $card['estatus'],
+                        'created_at' => $card['created_at'],
+                        'updated_at' => $card['updated_at']
                     ]
                 );
             }
@@ -72,6 +77,36 @@ class SyncService
                         'user_id' => $transaction['user_id'],
                         'motion' => $transaction['movimiento'],
                         'amount' => $transaction['monto'],
+                        'created_at' => $transaction['created_at'],
+                        'updated_at' => $transaction['updated_at']
+
+                    ]
+                );
+            }
+
+            foreach ($response['owner'] ?? [] as $owner) {
+                DB::table('owners')->updateOrInsert(
+                    [
+                        'id' => $owner['id'],
+                    ],
+                    [
+                        'user_id' => $owner['user_id'],
+                        'name' => $owner['nombres'],
+                        'last_name' => $owner['apellidos'],
+                        'movil' => $owner['movil'],
+                        'created_at' => $account['created_at'],
+                        'updated_at' => $account['updated_at']
+                    ]
+                );
+            }
+
+            foreach ($response['accountOwner'] ?? [] as $accountOwner) {
+                DB::table('account_owner')->updateOrInsert(
+                    [
+                        'account_id' => $accountOwner['account_id'],
+                    ],
+                    [
+                        'owner_id' => $accountOwner['owner_id'],
                     ]
                 );
             }

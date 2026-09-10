@@ -18,7 +18,7 @@ return new class extends Migration
                   ->cascadeOnDelete();
             $table->string('name');
             $table->string('last_name');
-            $table->string('movil');
+        $table->string('movil')->nullable();
             $table->timestamps();
         });
     }
