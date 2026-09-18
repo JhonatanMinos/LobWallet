@@ -9,6 +9,8 @@ use App\Models\Card;
 use App\Models\Owner;
 use App\Models\Transaction;
 
+use Illuminate\Http\Request;
+use App\Services\CardService;
 
 class DashboardController extends Controller
 {
@@ -28,6 +30,19 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard/create',[
             'accounts' => Account::all()
         ]);
+    }
+
+    public function store(Request $request, CardService $cardService) {
+        $validated = $request->validate([
+            'card'=> ['required', 'string'],
+            'name' => ['required', 'string'],
+            'lastName' => ['required','string'],
+            'movil' => ['required','string'],
+        ]);
+
+        $cardService->store($validated);
+
+        return back()->with('success','Tarjeta agregada correctamente');
     }
 }
 

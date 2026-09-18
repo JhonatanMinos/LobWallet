@@ -2,10 +2,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { router } from '@inertiajs/react';
 
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import card from '@/routes/card';
 
 const cardSchema = z.object({
     card: z
@@ -27,12 +37,7 @@ type CardForm = z.infer<typeof cardSchema>;
 
 export default function AddCard() {
     const [isDefault, setIsDefault] = useState(true);
-    const {
-        register,
-        handleSubmit,
-        watch,
-        formState: { errors, isSubmitting },
-    } = useForm<CardForm>({
+    const form = useForm<CardForm>({
         resolver: zodResolver(cardSchema),
         defaultValues: {
             card: '',
@@ -41,6 +46,14 @@ export default function AddCard() {
             movil: '',
         },
     });
+
+    const {
+        control,
+        handleSubmit,
+        reset,
+        watch,
+        formState: { isSubmitting },
+    } = form;
 
     const cardNumber = watch('card');
     const name = watch('name');
@@ -73,36 +86,22 @@ export default function AddCard() {
     }, [name, lastName]);
 
     const submit = async (data: CardForm) => {
-        try{
-            const response = await fetch(
-                'https://socios.lobcorporativo.com/api/cards',
-                {
-                    method: 'POST',
-                    header: {
-                        'Content-Type': "application/json",
-                        Accpet: "application/json",
-                        Authorization: ''
-                    },
-                    body: JSON.stringify(data),
-                }
-            );
-             const data = await response.json();
+        router.post(
+            card.store().url,
+            {
+                ...data,
+                card: data.card.replace(/\s/g, ''),
+                movil: data.movil.replace(/\s/g, ''),
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
 
-            if(!response.ok){
-                throw new Error(
-                    data.message || 'No se pudo registrar la tarjeta'
-                );
-            }
-        }
-        console.log(data);
-
-        // Aquí posteriormente validaremos la tarjeta
-        // contra la API o SQLite cuando estés offline.
-
-        // Ejemplo:
-        //
-        // await validateCard(data.card);
-
+                onSuccess: () => {
+                    reset();
+                },
+            },
+        );
     };
 
     return (
@@ -165,224 +164,271 @@ export default function AddCard() {
                             </div>
                         </CardContent>
                     </Card>
-
                     {/* FORM */}
-                    <form
-                        id="add-card-form"
-                        onSubmit={handleSubmit(submit)}
-                        className="space-y-4"
-                    >
-                        {/* CARD NUMBER */}
-                        <div className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <label
-                                    htmlFor="card"
-                                    className="flex items-center gap-1.5 text-xs font-medium text-zinc-300"
-                                >
-                                    Número de tarjeta
-                                    <span className="font-bold text-rose-400">
-                                        *
-                                    </span>
-                                </label>
+                    <Form {...form}>
+                        <form
+                            id="add-card-form"
+                            onSubmit={handleSubmit(submit)}
+                            className="space-y-4"
+                        >
+                            {/* CARD NUMBER */}
+                            <FormField
+                                control={control}
+                                name="card"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <div className="flex items-center justify-between">
+                                            <FormLabel className="text-xs font-medium text-zinc-300">
+                                                Número de tarjeta
+                                                <span className="text-rose-400">
+                                                    *
+                                                </span>
+                                            </FormLabel>
 
-                                <button
-                                    type="button"
-                                    className="inline-flex items-center gap-1 text-[11px] text-zinc-400 transition-colors hover:text-zinc-200"
-                                >
-                                    <svg
-                                        fill="none"
-                                        height="13"
-                                        stroke="currentColor"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                        width="13"
-                                    >
-                                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                                        <circle cx="12" cy="13" r="3" />
-                                    </svg>
-                                    Escanear
-                                </button>
-                            </div>
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center gap-1 text-[11px] text-zinc-400 transition-colors hover:text-zinc-200"
+                                            >
+                                                <svg
+                                                    fill="none"
+                                                    height="13"
+                                                    stroke="currentColor"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    viewBox="0 0 24 24"
+                                                    width="13"
+                                                >
+                                                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                                                    <circle
+                                                        cx="12"
+                                                        cy="13"
+                                                        r="3"
+                                                    />
+                                                </svg>
+                                                Escanear
+                                            </button>
+                                        </div>
 
-                            <div className="relative">
-                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
-                                    <svg
-                                        fill="none"
-                                        height="16"
-                                        stroke="currentColor"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                        width="16"
-                                    >
-                                        <rect
-                                            height="14"
-                                            rx="2"
-                                            width="20"
-                                            x="2"
-                                            y="5"
-                                        />
-                                        <line x1="2" x2="22" y1="10" y2="10" />
-                                    </svg>
-                                </div>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400">
+                                                    <svg
+                                                        fill="none"
+                                                        height="16"
+                                                        stroke="currentColor"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        viewBox="0 0 24 24"
+                                                        width="16"
+                                                    >
+                                                        <rect
+                                                            height="14"
+                                                            rx="2"
+                                                            width="20"
+                                                            x="2"
+                                                            y="5"
+                                                        />
+                                                        <line
+                                                            x1="2"
+                                                            x2="22"
+                                                            y1="10"
+                                                            y2="10"
+                                                        />
+                                                    </svg>
+                                                </div>
 
-                                <Input
-                                    id="card"
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="Ej. 2027 0024 2389"
-                                    className="border-zinc-800 bg-zinc-900/90 py-2.5 pr-10 pl-9 font-mono text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-700 focus:ring-zinc-400"
-                                    {...register('card')}
-                                />
+                                                <Input
+                                                    {...field}
+                                                    id="card"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    autoComplete="cc-number"
+                                                    placeholder="Ej. 2027 0024 2389"
+                                                    maxLength={19}
+                                                    onChange={(event) => {
+                                                        const value =
+                                                            event.target.value.replace(
+                                                                /\D/g,
+                                                                '',
+                                                            );
 
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400">
-                                    <svg
-                                        fill="none"
-                                        height="15"
-                                        stroke="currentColor"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                        width="15"
-                                    >
-                                        <rect
-                                            height="14"
-                                            rx="2"
-                                            ry="2"
-                                            width="14"
-                                            x="8"
-                                            y="8"
-                                        />
-                                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1 0-2 2-2h10c1.1 0 2 .9 2 2" />
-                                    </svg>
-                                </div>
-                            </div>
+                                                        field.onChange(
+                                                            value.slice(0, 16),
+                                                        );
+                                                    }}
+                                                    className="border-zinc-800 bg-zinc-900/90 py-2.5 pr-10 pl-9 font-mono text-sm text-zinc-100 placeholder:text-zinc-400 focus:border-zinc-700 focus:ring-zinc-400"
+                                                />
 
-                            <p className="text-[11px] text-zinc-400">
-                                Ingresa los 10 o 16 dígitos al frente de tu
-                                plástico o cupón digital.
-                            </p>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400">
+                                                    <svg
+                                                        fill="none"
+                                                        height="15"
+                                                        stroke="currentColor"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        viewBox="0 0 24 24"
+                                                        width="15"
+                                                    >
+                                                        <rect
+                                                            height="14"
+                                                            rx="2"
+                                                            ry="2"
+                                                            width="14"
+                                                            x="8"
+                                                            y="8"
+                                                        />
+                                                        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </FormControl>
 
-                            {errors.card && (
-                                <p className="text-[11px] text-rose-400">
-                                    {errors.card.message}
-                                </p>
-                            )}
-                        </div>
+                                        <p className="text-[11px] text-zinc-400">
+                                            Ingresa los 10 o 16 dígitos al
+                                            frente de tu plástico o cupón
+                                            digital.
+                                        </p>
 
-                        {/* NAME + LAST NAME */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <label
-                                    htmlFor="name"
-                                    className="text-xs font-medium text-zinc-300"
-                                >
-                                    Nombre{' '}
-                                    <span className="text-rose-400">*</span>
-                                </label>
-
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    placeholder="Ej. Juan"
-                                    className="border-zinc-800 bg-zinc-900/90 text-sm text-zinc-100 placeholder:text-zinc-400"
-                                    {...register('name')}
-                                />
-
-                                {errors.name && (
-                                    <p className="text-[11px] text-rose-400">
-                                        {errors.name.message}
-                                    </p>
+                                        <FormMessage className="text-[11px] text-rose-400" />
+                                    </FormItem>
                                 )}
-                            </div>
+                            />
+                            {/* NAME + LAST NAME */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <FormField
+                                    control={control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs font-medium text-zinc-300">
+                                                Nombre{' '}
+                                                <span className="text-rose-400">
+                                                    *
+                                                </span>
+                                            </FormLabel>
 
-                            <div className="space-y-1.5">
-                                <label
-                                    htmlFor="lastName"
-                                    className="text-xs font-medium text-zinc-300"
-                                >
-                                    Apellido{' '}
-                                    <span className="text-rose-400">*</span>
-                                </label>
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    id="name"
+                                                    type="text"
+                                                    autoComplete="given-name"
+                                                    placeholder="Ej. Juan"
+                                                    className="border-zinc-800 bg-zinc-900/90 text-sm text-zinc-100 placeholder:text-zinc-400"
+                                                />
+                                            </FormControl>
 
-                                <Input
-                                    id="lastName"
-                                    type="text"
-                                    placeholder="Ej. Pérez Morales"
-                                    className="border-zinc-800 bg-zinc-900/90 text-sm text-zinc-100 placeholder:text-zinc-400"
-                                    {...register('lastName')}
+                                            <FormMessage className="text-[11px] text-rose-400" />
+                                        </FormItem>
+                                    )}
                                 />
 
-                                {errors.lastName && (
-                                    <p className="text-[11px] text-rose-400">
-                                        {errors.lastName.message}
-                                    </p>
+                                <FormField
+                                    control={control}
+                                    name="lastName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-xs font-medium text-zinc-300">
+                                                Apellido{' '}
+                                                <span className="text-rose-400">
+                                                    *
+                                                </span>
+                                            </FormLabel>
+
+                                            <FormControl>
+                                                <Input
+                                                    {...field}
+                                                    id="lastName"
+                                                    type="text"
+                                                    autoComplete="family-name"
+                                                    placeholder="Ej. Pérez Morales"
+                                                    className="border-zinc-800 bg-zinc-900/90 text-sm text-zinc-100 placeholder:text-zinc-400"
+                                                />
+                                            </FormControl>
+
+                                            <FormMessage className="text-[11px] text-rose-400" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            {/* MOBILE */}
+                            <FormField
+                                control={control}
+                                name="movil"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <div className="flex items-center justify-between">
+                                            <FormLabel className="text-xs font-medium text-zinc-300">
+                                                Móvil asociado{' '}
+                                                <span className="text-rose-400">
+                                                    *
+                                                </span>
+                                            </FormLabel>
+
+                                            <span className="text-[11px] text-zinc-400">
+                                                Para código SMS OTP
+                                            </span>
+                                        </div>
+
+                                        <FormControl>
+                                            <div className="flex overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/90 focus-within:border-zinc-700 focus-within:ring-1 focus-within:ring-zinc-400">
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex items-center gap-1 border-r border-zinc-800 bg-zinc-900 px-3 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                                                >
+                                                    <span className="text-sm">
+                                                        🇲🇽
+                                                    </span>
+
+                                                    <span>+52</span>
+
+                                                    <svg
+                                                        className="ml-0.5 text-zinc-500"
+                                                        fill="none"
+                                                        height="12"
+                                                        stroke="currentColor"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        viewBox="0 0 24 24"
+                                                        width="12"
+                                                    >
+                                                        <path d="m6 9 6 6 6-6" />
+                                                    </svg>
+                                                </button>
+
+                                                <Input
+                                                    {...field}
+                                                    id="movil"
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    autoComplete="tel"
+                                                    placeholder="55 1234 5678"
+                                                    onChange={(event) => {
+                                                        const value =
+                                                            event.target.value.replace(
+                                                                /\D/g,
+                                                                '',
+                                                            );
+
+                                                        field.onChange(
+                                                            value.slice(0, 10),
+                                                        );
+                                                    }}
+                                                    className="border-0 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-400 focus-visible:ring-0"
+                                                />
+                                            </div>
+                                        </FormControl>
+
+                                        <FormMessage className="text-[11px] text-rose-400" />
+                                    </FormItem>
                                 )}
-                            </div>
-                        </div>
-
-                        {/* MOBILE */}
-                        <div className="space-y-1.5">
-                            <label
-                                htmlFor="movil"
-                                className="flex items-center justify-between text-xs font-medium text-zinc-300"
-                            >
-                                <span>
-                                    Móvil asociado{' '}
-                                    <span className="text-rose-400">*</span>
-                                </span>
-
-                                <span className="text-[11px] text-zinc-400">
-                                    Para código SMS OTP
-                                </span>
-                            </label>
-
-                            <div className="flex overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/90 focus-within:border-zinc-700 focus-within:ring-1 focus-within:ring-zinc-400">
-                                <button
-                                    type="button"
-                                    className="inline-flex items-center gap-1 border-r border-zinc-800 bg-zinc-900 px-3 py-2.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
-                                >
-                                    <span className="text-sm">🇲🇽</span>
-
-                                    <span>+52</span>
-
-                                    <svg
-                                        className="ml-0.5 text-zinc-500"
-                                        fill="none"
-                                        height="12"
-                                        stroke="currentColor"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        viewBox="0 0 24 24"
-                                        width="12"
-                                    >
-                                        <path d="m6 9 6 6 6-6" />
-                                    </svg>
-                                </button>
-
-                                <Input
-                                    id="movil"
-                                    type="tel"
-                                    inputMode="numeric"
-                                    placeholder="55 1234 5678"
-                                    className="border-0 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-400 focus-visible:ring-0"
-                                    {...register('movil')}
-                                />
-                            </div>
-
-                            {errors.movil && (
-                                <p className="text-[11px] text-rose-400">
-                                    {errors.movil.message}
-                                </p>
-                            )}
-                        </div>
-                    </form>
-
+                            />
+                        </form>
+                    </Form>
                     {/* SECURITY NOTICE */}
                     <div className="flex items-start gap-2.5 rounded-xl border border-zinc-800/60 bg-zinc-900/20 p-3">
                         <svg

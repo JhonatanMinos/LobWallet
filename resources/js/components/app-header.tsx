@@ -41,6 +41,7 @@ import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn, toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
+import { index as store } from '@/routes/store';
 import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
@@ -60,7 +61,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Tiendas',
-        href: '#',
+        href: store(),
         icon: Map,
     },
 ];

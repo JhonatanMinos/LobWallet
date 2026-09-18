@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StoreController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,6 +15,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('card.create');
 
     Route::post('card', [DashboardController::class, 'store'])
-        ->name('card.store');});
+        ->name('card.store');
+
+    Route::get('store',[StoreController::class, 'index'])->name('store.index');
+
+});
 
 require __DIR__ . '/settings.php';
