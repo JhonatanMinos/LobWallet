@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Services\LocationService;
+
 
 class HandleInertiaRequests extends Middleware
 {
@@ -35,12 +37,23 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $location = null;
+
+    try {
+        $location = app(LocationService::class)->getCurrentLocation();
+    } catch (\Throwable $e) {
+        // No impedir que la aplicación cargue si no hay permiso
+        // o no se puede obtener la ubicación.
+    }
+
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
             ],
+            'location' => $location,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

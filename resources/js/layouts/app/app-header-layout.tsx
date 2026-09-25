@@ -1,6 +1,6 @@
 import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
 import { MobileDockMenu } from '@/components/app-dock-menu';
+import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { AppLayoutProps } from '@/types';
@@ -15,10 +15,15 @@ export default function AppHeaderLayout({
         <AppShell variant="header">
             {isMovile ? (
                 <>
-                    <MobileDockMenu />
-                    <AppContent className="mt-4 pt-8" variant="header">
+                    {/* Contenido con padding inferior suficiente para el dock flotante */}
+                    <AppContent
+                        className="mt-4 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom,0px))]"
+                        variant="header"
+                    >
                         {children}
                     </AppContent>
+                    {/* Dock flotante fijo en la parte inferior */}
+                    <MobileDockMenu />
                 </>
             ) : (
                 <>

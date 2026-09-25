@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { router } from '@inertiajs/react';
+import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Form,
     FormControl,
@@ -12,8 +13,6 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import card from '@/routes/card';
 
@@ -36,7 +35,6 @@ const cardSchema = z.object({
 type CardForm = z.infer<typeof cardSchema>;
 
 export default function AddCard() {
-    const [isDefault, setIsDefault] = useState(true);
     const form = useForm<CardForm>({
         resolver: zodResolver(cardSchema),
         defaultValues: {
@@ -51,39 +49,32 @@ export default function AddCard() {
         control,
         handleSubmit,
         reset,
-        watch,
         formState: { isSubmitting },
     } = form;
-
-    const cardNumber = watch('card');
-    const name = watch('name');
-    const lastName = watch('lastName');
-
-    const [previewCard, setPreviewCard] = useState('•••• •••• •••• ••••');
-    const [previewName, setPreviewName] = useState('NOMBRE DEL TITULAR');
-
-    useEffect(() => {
-        const value = cardNumber?.replace(/\s+/g, '') || '';
-
+    const formatCardNumber = (value: string): string => {
         if (!value) {
-            setPreviewCard('•••• •••• •••• ••••');
-            return;
+            return '';
         }
 
-        const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+        return value
+            .replace(/\D/g, '') // Elimina todo lo que no sea número
+            .replace(/(.{4})/g, '$1 ') // Agrega un espacio cada 4 dígitos
+            .trim();
+    };
 
-        setPreviewCard(formatted);
-    }, [cardNumber]);
+    const cardNumber = useWatch({ control, name: 'card' });
+    const name = useWatch({ control, name: 'name' });
+    const lastName = useWatch({ control, name: 'lastName' });
 
-    useEffect(() => {
-        const fullName = `${name?.trim() || ''} ${
-            lastName?.trim() || ''
-        }`.trim();
+    const fullName = [name, lastName].filter(Boolean).join(' ').trim();
 
-        setPreviewName(
-            fullName.length > 0 ? fullName.toUpperCase() : 'NOMBRE DEL TITULAR',
-        );
-    }, [name, lastName]);
+    const previewCard = cardNumber
+        ? formatCardNumber(cardNumber)
+        : '•••• •••• •••• ••••';
+
+    const previewName = fullName
+        ? fullName.toUpperCase()
+        : 'NOMBRE DEL TITULAR';
 
     const submit = async (data: CardForm) => {
         router.post(

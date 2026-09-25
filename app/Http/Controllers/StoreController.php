@@ -6,6 +6,8 @@ use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
 use App\Models\Store;
 use App\Services\StoreService;
+use App\Services\LocationService;
+use Inertia\Inertia;
 
 class StoreController extends Controller
 {
@@ -15,7 +17,9 @@ class StoreController extends Controller
     public function index(StoreService $storeService)
     {
         $Stores = $storeService->stores();
-        dd($Stores);
+        return Inertia::render('Maps/maps', [
+            'shops' => $Stores
+        ]);
     }
 
     /**

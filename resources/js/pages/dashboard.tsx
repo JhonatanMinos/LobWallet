@@ -1,18 +1,10 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import {
-    Card,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { dashboard } from '@/routes';
-import Barcode from 'react-barcode';
 import { CreditCard, CircleDollarSign, ShoppingBag } from 'lucide-react';
-import card from '@/routes/card';
 import React, { useCallback, useState } from 'react';
-import { ScrollView, RefreshControl } from 'react-native';
+import Barcode from 'react-barcode';
+import { dashboard } from '@/routes';
+import card from '@/routes/card';
+
 
 type PageProps = {
     accounts: {
@@ -111,8 +103,8 @@ export default function Dashboard() {
                                 </div>
 
                                 {/* Barcode */}
-                                <div className="flex w-full flex-col items-center justify-center space-y-2.5">
-                                    <div className="w-full max-w-[280px] overflow-hidden rounded-sm bg-white">
+                                <div className="flex w-full items-center justify-center space-y-2.5">
+                                    <div className="flex w-full items-center justify-center overflow-hidden rounded-sm bg-white">
                                         <Barcode
                                             value={serialCard}
                                             format="CODE128"
