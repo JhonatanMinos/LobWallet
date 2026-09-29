@@ -94,8 +94,8 @@ class SyncService
                         'name' => $owner['nombres'],
                         'last_name' => $owner['apellidos'],
                         'movil' => $owner['movil'],
-                        'created_at' => $account['created_at'],
-                        'updated_at' => $account['updated_at']
+                        'created_at' => $owner['created_at'],
+                        'updated_at' => $owner['updated_at']
                     ]
                 );
             }
@@ -129,4 +129,3 @@ class SyncService
         ];
     }
 }
-

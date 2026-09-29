@@ -1,10 +1,8 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { CreditCard, CircleDollarSign, ShoppingBag } from 'lucide-react';
-import React, { useCallback, useState } from 'react';
 import Barcode from 'react-barcode';
 import { dashboard } from '@/routes';
 import card from '@/routes/card';
-
 
 type PageProps = {
     accounts: {
@@ -13,46 +11,29 @@ type PageProps = {
         balance: number;
         activo: string;
         pin: number | null;
-    }[];
-
-    owner: {
-        name: string;
-        last_name: string;
-    }[];
+    } | null;
 
     cards: {
         id: number;
         account_id: number;
         card: string;
         status: number;
-    }[];
+    } | null;
 
     transactions: {
+        id: number;
+        account_id: number;
         motion: string;
         amount: number;
+        created_at: string;
     }[];
 };
 
 export default function Dashboard() {
     const { accounts, cards, transactions } = usePage<PageProps>().props;
-    const [refreshing, setRefreshing] = useState(false);
 
-    const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-
-        try {
-            await sync();
-        } catch (error) {
-            console.error('Error sincronizando:', error);
-        } finally {
-            setRefreshing(false);
-        }
-    }, []);
-
-    const account = accounts[0];
-    const cardGift = cards[0];
-    const serialCard = cardGift?.card;
-    const balance = account?.balance ?? 0;
+    const serialCard = cards?.card;
+    const balance = accounts?.balance ?? 0;
 
     const formatAmount = (amount: number) => {
         return amount.toLocaleString('es-MX', {
@@ -123,7 +104,7 @@ export default function Dashboard() {
                                 <div className="mt-4 flex w-full items-center justify-between border-t border-dashed border-zinc-200 pt-3 text-[11px] text-zinc-400">
                                     <span>
                                         Cuenta #
-                                        {account?.account ?? account?.id}
+                                        {accounts?.account ?? accounts?.id}
                                     </span>
                                 </div>
                             </>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\SyncController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -9,16 +10,16 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-     Route::get('dashboard', [DashboardController::class, 'index'])
+    Route::get('dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
-     Route::get('newCard', [DashboardController::class, 'create'])
+    Route::get('newCard', [DashboardController::class, 'create'])
         ->name('card.create');
 
     Route::post('card', [DashboardController::class, 'store'])
         ->name('card.store');
 
-    Route::get('store',[StoreController::class, 'index'])->name('store.index');
-
+    Route::get('store', [StoreController::class, 'index'])->name('store.index');
+    Route::post('/sync', SyncController::class)->name('sync');
 });
 
 require __DIR__ . '/settings.php';
