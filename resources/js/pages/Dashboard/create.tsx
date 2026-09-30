@@ -14,7 +14,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import card from '@/routes/card';
+import accountCard from '@/routes/accountCard';
 
 const cardSchema = z.object({
     card: z
@@ -78,7 +78,7 @@ export default function AddCard() {
 
     const submit = async (data: CardForm) => {
         router.post(
-            card.store().url,
+            accountCard.store().url,
             {
                 ...data,
                 card: data.card.replace(/\s/g, ''),

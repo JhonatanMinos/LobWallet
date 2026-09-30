@@ -4,9 +4,6 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use App\Models\Account;
-use App\Models\Card;
-use App\Models\Transaction;
-
 use Illuminate\Http\Request;
 use App\Services\CardService;
 use App\Services\WalletService;
@@ -38,6 +35,6 @@ class DashboardController extends Controller
 
         $cardService->store($validated);
 
-        return back()->with('success', 'Tarjeta agregada correctamente');
+        return redirect()->route('dashboard');
     }
 }

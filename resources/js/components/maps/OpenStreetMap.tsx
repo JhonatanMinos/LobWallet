@@ -1,7 +1,14 @@
 import L from 'leaflet';
 import { Navigation } from 'lucide-react';
-import { useEffect } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { useEffect, useMemo } from 'react';
+import {
+    MapContainer,
+    Marker,
+    Popup,
+    TileLayer,
+    useMap,
+    Tooltip,
+} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export type MapLocation = {
@@ -22,12 +29,25 @@ const userIcon = L.divIcon({
             style="
                 width: 18px;
                 height: 18px;
-                background: #2563eb;
-                border: 3px solid white;
+                background: #000;
+                border: 3px solid black;
                 border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
                 box-shadow: 0 0 0 4px rgba(37,99,235,.25);
             "
-        ></div>
+        >
+            <span style="
+                width: 6px;
+                height: 6px;
+                background: #fff;
+                border-radius: 50%;
+                display: block;
+                "
+            ></span>
+        </div>
     `,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
@@ -38,14 +58,26 @@ const shopIcon = L.divIcon({
     html: `
         <div
             style="
-                width: 18px;
-                height: 18px;
-                background: #dc2626;
-                border: 3px solid white;
-                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                background: #fff;
+                border: 3px solid black;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
                 box-shadow: 0 2px 5px rgba(0,0,0,.3);
             "
-        ></div>
+        >
+            <span style="
+                    width: 6px;
+                    height: 6px;
+                    background: #000;
+                    border-radius: 50%;
+                    display: block;
+                "
+            ></span>
+        </div>
     `,
     iconSize: [18, 18],
     iconAnchor: [9, 9],
@@ -99,9 +131,13 @@ export default function OpenStreetMap({
     locations,
     currentLocation,
 }: OpenStreetMapProps) {
-    const defaultLocation: [number, number] = currentLocation
-        ? [currentLocation.lat, currentLocation.lng]
-        : [20.6597, -103.3496];
+    const defaultLocation = useMemo<[number, number]>(() => {
+        if (currentLocation) {
+            return [currentLocation.lat, currentLocation.lng];
+        }
+
+        return [20.6597, -103.23496];
+    }, [currentLocation?.lat, currentLocation?.lng]);
 
     return (
         <div className="h-[500px] w-full">
@@ -109,6 +145,7 @@ export default function OpenStreetMap({
                 center={defaultLocation}
                 zoom={14}
                 scrollWheelZoom
+                zoomControl={false}
                 className="h-full w-full"
             >
                 <TileLayer
@@ -125,7 +162,14 @@ export default function OpenStreetMap({
                         position={[currentLocation.lat, currentLocation.lng]}
                         icon={userIcon}
                     >
-                        <Popup>Tu ubicación</Popup>
+                        <Tooltip
+                            permanent
+                            direction="top"
+                            offset={[0, -10]}
+                            className="user-location-tooltip"
+                        >
+                            Usted está aquí
+                        </Tooltip>
                     </Marker>
                 )}
 

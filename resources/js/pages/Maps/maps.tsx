@@ -1,12 +1,12 @@
-import { Head, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
-import OpenStreetMap from '@/components/maps/OpenStreetMap';
+import { Head } from '@inertiajs/react';
+import { useState, useMemo, lazy, Suspense } from 'react';
+const OpenStreetMap = lazy(() => import('@/components/maps/OpenStreetMap'));
 import { SearchForm } from '@/components/search-form';
 import { index as store } from '@/routes/store';
 
 export type UserLocation = {
-    lat: number;
-    lng: number;
+    latitude: number;
+    longitude: number;
     accuracy?: number;
     timestamp?: number;
 };
@@ -23,12 +23,19 @@ interface ShopLocation {
     longitud: string;
 }
 
+type ShopsResponse = {
+    tiendas: ShopLocation[];
+};
+
 interface OpenStreetMapLazyProps {
-    shops: ShopLocation[];
+    shops: ShopsResponse;
+    location: UserLocation | null;
 }
 
-export default function OpenStreetMapLazy({ shops }: OpenStreetMapLazyProps) {
-    const { location } = usePage().props;
+export default function OpenStreetMapLazy({
+    shops,
+    location,
+}: OpenStreetMapLazyProps) {
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filtrar las tiendas en base al texto ingresado en el buscador
@@ -75,10 +82,22 @@ export default function OpenStreetMapLazy({ shops }: OpenStreetMapLazyProps) {
                     placeholder="Buscar por tienda, municipio, colonia..."
                     className="mb-4 w-full"
                 />
-                <OpenStreetMap
-                    locations={locations}
-                    currentLocation={currentLocation}
-                />
+                <div className="min-h-[500px] flex-1 overflow-hidden rounded-xl">
+                    <Suspense
+                        fallback={
+                            <div className="flex h-[500px] items-center justify-center rounded-xl bg-zinc-100">
+                                <span className="text-sm text-zinc-500">
+                                    Cargando mapa...
+                                </span>
+                            </div>
+                        }
+                    >
+                        <OpenStreetMap
+                            locations={locations}
+                            currentLocation={currentLocation}
+                        />
+                    </Suspense>
+                </div>
             </div>
         </>
     );

@@ -1,11 +1,13 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { CreditCard, CircleDollarSign, ShoppingBag } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Barcode from 'react-barcode';
 import { dashboard } from '@/routes';
-import card from '@/routes/card';
+import accountCard from '@/routes/accountCard';
+import { syncWallet } from '@/services/sync';
 
 type PageProps = {
-    accounts: {
+    account: {
         id: number;
         account: string;
         balance: number;
@@ -13,7 +15,7 @@ type PageProps = {
         pin: number | null;
     } | null;
 
-    cards: {
+    card: {
         id: number;
         account_id: number;
         card: string;
@@ -30,10 +32,52 @@ type PageProps = {
 };
 
 export default function Dashboard() {
-    const { accounts, cards, transactions } = usePage<PageProps>().props;
+    const { account, card, transactions } = usePage<PageProps>().props;
+    const [refreshing, setRefreshing] = useState(false);
 
-    const serialCard = cards?.card;
-    const balance = accounts?.balance ?? 0;
+    const mounted = useRef(false);
+
+    const refreshWallet = useCallback(async () => {
+        if (refreshing) {
+            return;
+        }
+
+        setRefreshing(true);
+
+        try {
+            await syncWallet();
+        } catch (error) {
+            console.error('Error sincronizando wallet:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    }, [refreshing]);
+
+    useEffect(() => {
+        if (mounted.current) {
+            return;
+        }
+
+        mounted.current = true;
+
+        void refreshWallet();
+    }, [refreshWallet]);
+
+    useEffect(() => {
+        const interval = window.setInterval(
+            () => {
+                void refreshWallet();
+            },
+            5 * 60 * 1000,
+        );
+
+        return () => {
+            window.clearInterval(interval);
+        };
+    }, [refreshWallet]);
+
+    const serialCard = card?.card;
+    const balance = Number(account?.balance ?? 0);
 
     const formatAmount = (amount: number) => {
         return amount.toLocaleString('es-MX', {
@@ -104,7 +148,7 @@ export default function Dashboard() {
                                 <div className="mt-4 flex w-full items-center justify-between border-t border-dashed border-zinc-200 pt-3 text-[11px] text-zinc-400">
                                     <span>
                                         Cuenta #
-                                        {accounts?.account ?? accounts?.id}
+                                        {account?.account ?? account?.id}
                                     </span>
                                 </div>
                             </>
@@ -127,7 +171,7 @@ export default function Dashboard() {
                     <div className="mt-5 flex justify-center">
                         <button
                             type="button"
-                            onClick={() => router.get(card.create().url)}
+                            onClick={() => router.get(accountCard.create().url)}
                             className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-medium whitespace-nowrap text-zinc-50 shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto"
                         >
                             <CreditCard className="h-3.5 w-3.5 text-zinc-400" />

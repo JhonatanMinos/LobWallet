@@ -4,15 +4,20 @@ namespace App\Services;
 
 use Denniskrol\NativePHPGeolocation\Facades\Geolocation;
 use RuntimeException;
+use SebastianBergmann\CodeCoverage\Util\Percentage;
 
 class LocationService
 {
     public function getCurrentLocation(): array
     {
-        Geolocation::requestPermission();
+        $permission = Geolocation::requestPermission();
+
+        if (isset($permission['granted']) && !$permission['granted']) {
+            throw new RuntimeException('Permiso de ubicacion no concedido.');
+        }
 
         $response = Geolocation::getCurrentPosition(
-            highAccuracy: true
+            highAccuracy: false
         );
 
         // La librería puede devolver un array o un JSON string
@@ -59,4 +64,3 @@ class LocationService
         ];
     }
 }
-

@@ -14,11 +14,16 @@ class StoreController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(StoreService $storeService)
+    public function index(StoreService $storeService, LocationService $locationService)
     {
         $Stores = $storeService->stores();
+
         return Inertia::render('Maps/maps', [
-            'shops' => $Stores
+            'shops' => $Stores,
+            'location' => fn() => rescue(
+                fn() => $locationService->getCurrentLocation(),
+                null
+            ),
         ]);
     }
 
