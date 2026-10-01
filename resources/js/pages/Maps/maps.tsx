@@ -2,30 +2,17 @@ import { Head } from '@inertiajs/react';
 import { useState, useMemo, lazy, Suspense } from 'react';
 const OpenStreetMap = lazy(() => import('@/components/maps/OpenStreetMap'));
 import { SearchForm } from '@/components/search-form';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { useShopSearch } from '@/hooks/useShopSearch';
 import { index as store } from '@/routes/store';
-
-export type UserLocation = {
-    latitude: number;
-    longitude: number;
-    accuracy?: number;
-    timestamp?: number;
-};
-
-interface ShopLocation {
-    codigo: string;
-    tienda: string;
-    calle: string;
-    colonia: string;
-    municipio: string;
-    telefono: string;
-    horario: string;
-    latitud: string;
-    longitud: string;
-}
-
-type ShopsResponse = {
-    tiendas: ShopLocation[];
-};
+import ShopDetail from './ShopDetail';
+import ShopList from './ShopList';
+import { ShopsResponse, UserLocation } from '@/types/shops';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface OpenStreetMapLazyProps {
     shops: ShopsResponse;
@@ -36,34 +23,20 @@ export default function OpenStreetMapLazy({
     shops,
     location,
 }: OpenStreetMapLazyProps) {
-    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedShop, setSelectedShop] = useState<ShopLocation | null>(null);
+    const { searchQuery, setSearchQuery, filteredShops } = useShopSearch(
+        shops?.tiendas,
+    );
+    const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-    // Filtrar las tiendas en base al texto ingresado en el buscador
-    const filteredShops = useMemo(() => {
-        const tiendasList = shops?.tiendas ?? [];
-
-        if (!searchQuery.trim()) {
-            return tiendasList;
-        }
-
-        const query = searchQuery.toLowerCase().trim();
-
-        return tiendasList.filter((tienda) => {
-            return (
-                tienda.tienda?.toLowerCase().includes(query) ||
-                tienda.municipio?.toLowerCase().includes(query) ||
-                tienda.colonia?.toLowerCase().includes(query) ||
-                tienda.calle?.toLowerCase().includes(query) ||
-                tienda.codigo?.toLowerCase().includes(query)
-            );
-        });
-    }, [shops?.tiendas, searchQuery]);
-
-    const locations = filteredShops.map((tienda) => ({
-        lat: Number(tienda.latitud),
-        lng: Number(tienda.longitud),
-        label: tienda.tienda,
-    }));
+    const locations = useMemo(() => {
+        return filteredShops.map((tienda) => ({
+            id: tienda.codigo,
+            lat: Number(tienda.latitud),
+            lng: Number(tienda.longitud),
+            label: tienda.tienda,
+        }));
+    }, [filteredShops]);
 
     const currentLocation = location
         ? {
@@ -71,6 +44,14 @@ export default function OpenStreetMapLazy({
               lng: location.longitude,
           }
         : undefined;
+
+    const handleMarkerSelect = (locationId: string) => {
+        const shop = filteredShops.find((s) => s.codigo === locationId);
+
+        if (shop) {
+            setSelectedShop(shop);
+        }
+    };
 
     return (
         <>
@@ -82,22 +63,49 @@ export default function OpenStreetMapLazy({
                     placeholder="Buscar por tienda, municipio, colonia..."
                     className="mb-4 w-full"
                 />
-                <div className="min-h-[500px] flex-1 overflow-hidden rounded-xl">
-                    <Suspense
-                        fallback={
-                            <div className="flex h-[500px] items-center justify-center rounded-xl bg-zinc-100">
-                                <span className="text-sm text-zinc-500">
-                                    Cargando mapa...
-                                </span>
-                            </div>
-                        }
+                <ResizablePanelGroup
+                    orientation={isDesktop ? 'horizontal' : 'vertical'}
+                    className="min-h-[650px] flex-1 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60"
+                >
+                    <ResizablePanel
+                        defaultSize={60}
+                        minSize={30}
+                        className="relative h-full w-full overflow-hidden"
                     >
-                        <OpenStreetMap
-                            locations={locations}
-                            currentLocation={currentLocation}
-                        />
-                    </Suspense>
-                </div>
+                        <Suspense
+                            fallback={
+                                <div className="flex h-[500px] items-center justify-center rounded-xl bg-zinc-100">
+                                    <span className="text-sm text-zinc-500">
+                                        Cargando mapa...
+                                    </span>
+                                </div>
+                            }
+                        >
+                            <OpenStreetMap
+                                locations={locations}
+                                currentLocation={currentLocation}
+                                onSelectMarker={handleMarkerSelect}
+                            />
+                        </Suspense>
+                    </ResizablePanel>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel
+                        defaultSize={40}
+                        className="flex h-full items-center justify-center p-6"
+                    >
+                        {selectedShop ? (
+                            <ShopDetail
+                                shop={selectedShop}
+                                onBack={() => setSelectedShop(null)}
+                            />
+                        ) : (
+                            <ShopList
+                                shops={filteredShops}
+                                onSelect={setSelectedShop}
+                            />
+                        )}
+                    </ResizablePanel>
+                </ResizablePanelGroup>
             </div>
         </>
     );

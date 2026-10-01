@@ -20,6 +20,7 @@ export type MapLocation = {
 interface OpenStreetMapProps {
     locations: MapLocation[];
     currentLocation?: MapLocation;
+    onSelectMarker?: (id: string) => void;
 }
 
 const userIcon = L.divIcon({
@@ -130,6 +131,7 @@ function LocationButton({ location }: { location?: MapLocation }) {
 export default function OpenStreetMap({
     locations,
     currentLocation,
+    onSelectMarker,
 }: OpenStreetMapProps) {
     const defaultLocation = useMemo<[number, number]>(() => {
         if (currentLocation) {
@@ -178,6 +180,9 @@ export default function OpenStreetMap({
                         key={`${location.lat}-${location.lng}-${index}`}
                         position={[location.lat, location.lng]}
                         icon={shopIcon}
+                        eventHandlers={{
+                            click: () => onSelectMarker?.(location.id),
+                        }}
                     >
                         <Popup>{location.label ?? 'Tienda'}</Popup>
                     </Marker>
