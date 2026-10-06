@@ -12,6 +12,12 @@ function Toaster({ ...props }: ToasterProps) {
             theme={appearance}
             className="toaster group"
             position="top-right"
+            offset={{ top: '1rem', right: '1rem' }}
+            mobileOffset={{
+                top: 'calc(env(safe-area-inset-top, 0px) + 1rem)',
+                right: '1rem',
+                left: '1rem',
+            }}
             closeButton
             duration={4500}
             richColors
@@ -25,7 +31,7 @@ function Toaster({ ...props }: ToasterProps) {
             }
             toastOptions={{
                 classNames: {
-                    toast: 'group toast group-[.toaster]:border-border group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:shadow-lg',
+                    toast: 'group toast w-[calc(100vw-2rem)] sm:w-auto group-[.toaster]:border-border group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:shadow-lg',
                     title: 'group-[.toast]:font-semibold',
                     description: 'group-[.toast]:text-muted-foreground',
                     actionButton:

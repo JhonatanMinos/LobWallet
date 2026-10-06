@@ -1,7 +1,13 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { CreditCard, CircleDollarSign, ShoppingBag } from 'lucide-react';
+import {
+    CreditCard,
+    CircleDollarSign,
+    RefreshCw,
+    ShoppingBag,
+} from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Barcode from 'react-barcode';
+import { toast } from 'sonner';
 import { dashboard } from '@/routes';
 import accountCard from '@/routes/accountCard';
 import { syncWallet } from '@/services/sync';
@@ -34,24 +40,45 @@ type PageProps = {
 export default function Dashboard() {
     const { account, card, transactions } = usePage<PageProps>().props;
     const [refreshing, setRefreshing] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<
+        'idle' | 'syncing' | 'updated' | 'error'
+    >('idle');
 
     const mounted = useRef(false);
+    const refreshingRef = useRef(false);
 
-    const refreshWallet = useCallback(async () => {
-        if (refreshing) {
+    const refreshWallet = useCallback(async (notify = false) => {
+        if (refreshingRef.current) {
             return;
         }
 
+        refreshingRef.current = true;
         setRefreshing(true);
+        setSyncStatus('syncing');
 
         try {
-            await syncWallet();
+            const hasChanges = await syncWallet();
+            setSyncStatus(hasChanges ? 'updated' : 'idle');
+
+            if (notify) {
+                toast.success(
+                    hasChanges
+                        ? 'Wallet actualizada correctamente.'
+                        : 'Tu wallet ya está actualizada.',
+                    { id: 'wallet-sync' },
+                );
+            }
         } catch (error) {
+            setSyncStatus('error');
             console.error('Error sincronizando wallet:', error);
+            toast.error('No se pudo actualizar la wallet.', {
+                id: 'wallet-sync',
+            });
         } finally {
+            refreshingRef.current = false;
             setRefreshing(false);
         }
-    }, [refreshing]);
+    }, []);
 
     useEffect(() => {
         if (mounted.current) {
@@ -65,9 +92,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         const interval = window.setInterval(
-            () => {
-                void refreshWallet();
-            },
+            () => void refreshWallet(),
             5 * 60 * 1000,
         );
 
@@ -93,7 +118,7 @@ export default function Dashboard() {
                 <section className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 shadow-[0_0_25px_-5px_rgba(255,255,255,0.05)] backdrop-blur-sm sm:p-5">
                     {/* Card header */}
                     <div className="mb-4 flex items-start justify-between">
-                        <div className="space-y-1">
+                        <div className="min-w-0 space-y-1">
                             <div className="flex items-center space-x-2">
                                 <h2 className="text-lg font-semibold tracking-tight text-zinc-50">
                                     Tarjeta LOB
@@ -108,6 +133,44 @@ export default function Dashboard() {
                                 En tienda mostrar esta tarjeta para hacer uso
                                 del saldo disponible.
                             </p>
+                        </div>
+
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => void refreshWallet(true)}
+                                disabled={refreshing}
+                                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                aria-label="Actualizar wallet"
+                            >
+                                <RefreshCw
+                                    className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
+                                />
+                                <span className="hidden sm:inline">
+                                    Actualizar
+                                </span>
+                            </button>
+
+                            <span
+                                className={`text-[10px] ${
+                                    syncStatus === 'error'
+                                        ? 'text-rose-400'
+                                        : syncStatus === 'syncing'
+                                          ? 'text-amber-400'
+                                          : syncStatus === 'updated'
+                                            ? 'text-emerald-400'
+                                            : 'text-zinc-500'
+                                }`}
+                                aria-live="polite"
+                            >
+                                {syncStatus === 'syncing'
+                                    ? 'Actualizando...'
+                                    : syncStatus === 'error'
+                                      ? 'Sin conexión'
+                                      : syncStatus === 'updated'
+                                        ? 'Actualizada'
+                                        : 'Al día'}
+                            </span>
                         </div>
                     </div>
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SyncController;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('store', [StoreController::class, 'index'])->name('store.index');
 
+    Route::get('promotions', [PromotionController::class, 'index'])
+        ->name('promotions.index');
+
     Route::post('/sync', SyncController::class)->name('sync');
 });
 
-require __DIR__ . '/settings.php';
+require __DIR__.'/settings.php';

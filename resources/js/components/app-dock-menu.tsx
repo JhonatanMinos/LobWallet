@@ -1,5 +1,4 @@
 import { Link, usePage } from '@inertiajs/react';
-import { WalletCards, Percent, Map } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,34 +7,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
-
+import { primaryNavItems } from '@/config/navigation';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
-import { index as store } from '@/routes/store';
-import type { NavItem } from '@/types';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Wallet',
-        href: dashboard(),
-        icon: WalletCards,
-    },
-    {
-        title: 'Promociones',
-        href: '#',
-        icon: Percent,
-    },
-    {
-        title: 'Tiendas',
-        href: store(),
-        icon: Map,
-    },
-];
 
 const activeItemStyles =
-    'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+    'bg-neutral-200/90 text-neutral-950 dark:bg-neutral-800 dark:text-neutral-100';
 
 export function MobileDockMenu() {
     const page = usePage();
@@ -51,22 +29,22 @@ export function MobileDockMenu() {
                     'pointer-events-auto mx-auto w-fit max-w-[calc(100vw-1rem)]',
                     'flex items-center gap-1 p-2 sm:gap-2',
                     'rounded-full',
-                    'bg-white/30 dark:bg-black/35',
+                    'bg-white/80 dark:bg-black/35',
                     'backdrop-blur-2xl backdrop-saturate-200',
-                    'border border-white/40 dark:border-white/15',
+                    'border border-neutral-300/80 dark:border-white/15',
                     'shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.6),0_16px_40px_rgba(0,0,0,0.15)]',
                     'dark:shadow-[inset_0_1px_1px_0_rgba(255,255,255,0.15),0_16px_40px_rgba(0,0,0,0.5)]',
                 )}
             >
-                {mainNavItems.map(({ title, href, icon: Icon }) => (
+                {primaryNavItems.map(({ title, href, icon: Icon }) => (
                     <Link
                         key={title}
                         href={href}
                         aria-label={title}
                         className={cn(
                             'flex h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-1',
-                            'rounded-full transition-colors',
-                            'hover:bg-accent hover:text-accent-foreground',
+                            'rounded-full text-neutral-700 transition-colors dark:text-neutral-300',
+                            'hover:bg-neutral-200/70 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
                             whenCurrentUrl(href, activeItemStyles),
                         )}
                     >

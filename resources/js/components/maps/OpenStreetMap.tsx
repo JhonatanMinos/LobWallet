@@ -246,7 +246,7 @@ export default function OpenStreetMap({
     }, [currentLatitude, currentLongitude]);
 
     return (
-        <div className="h-full min-h-[420px] w-full lg:min-h-[500px]">
+        <div className="h-full min-h-[420px] w-full lg:min-h-0">
             <MapContainer
                 center={defaultLocation}
                 zoom={14}
