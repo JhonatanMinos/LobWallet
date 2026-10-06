@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
 use App\Models\Account;
-use Illuminate\Http\Request;
 use App\Services\CardService;
 use App\Services\WalletService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
@@ -20,7 +20,7 @@ class DashboardController extends Controller
     public function create()
     {
         return Inertia::render('Dashboard/create', [
-            'accounts' => Account::all()
+            'accounts' => Account::all(),
         ]);
     }
 
@@ -34,6 +34,11 @@ class DashboardController extends Controller
         ]);
 
         $cardService->store($validated);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Tarjeta agregada correctamente.'),
+        ]);
 
         return redirect()->route('dashboard');
     }

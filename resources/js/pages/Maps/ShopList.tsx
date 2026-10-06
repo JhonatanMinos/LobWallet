@@ -9,16 +9,16 @@ interface ShopListProps {
 
 export default function ShopList({ shops, onSelect }: ShopListProps) {
     return (
-        <div className="flex h-full min-h-0 w-full flex-0">
-            <div className="min-w-0 pb-3">
+        <div className="flex h-full min-h-0 w-full flex-col">
+            <div className="shrink-0 pb-3">
                 <h3 className="truncate text-sm font-semibold text-zinc-100">
                     Tiendas encontradas ({shops.length})
                 </h3>
             </div>
 
             {shops.length > 0 ? (
-                <ScrollArea className="min-h-0 w-full flex-1 [&>div]:!block [&>div]:!w-full">
-                    <div className="grid gap-3 pb-2 sm:grid-cols-2 lg:grid-cols-3">
+                <ScrollArea className="min-h-0 flex-1">
+                    <div className="grid gap-3 pb-2 sm:grid-cols-2">
                         {shops.map((shop) => (
                             <div
                                 key={shop.codigo}

@@ -48,8 +48,8 @@ export function MobileDockMenu() {
             <nav
                 aria-label="Main navigation"
                 className={cn(
-                    'pointer-events-auto mx-auto w-fit',
-                    'flex items-center gap-2 p-2',
+                    'pointer-events-auto mx-auto w-fit max-w-[calc(100vw-1rem)]',
+                    'flex items-center gap-1 p-2 sm:gap-2',
                     'rounded-full',
                     'bg-white/30 dark:bg-black/35',
                     'backdrop-blur-2xl backdrop-saturate-200',
@@ -64,13 +64,16 @@ export function MobileDockMenu() {
                         href={href}
                         aria-label={title}
                         className={cn(
-                            'flex size-12 items-center justify-center',
+                            'flex h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-1',
                             'rounded-full transition-colors',
                             'hover:bg-accent hover:text-accent-foreground',
                             whenCurrentUrl(href, activeItemStyles),
                         )}
                     >
-                        <Icon className="h-5 w-5" />
+                        {Icon && <Icon className="h-5 w-5" />}
+                        <span className="text-[10px] leading-none font-medium">
+                            {title}
+                        </span>
                     </Link>
                 ))}
                 <div className="ml-auto flex items-center space-x-2">
@@ -78,7 +81,9 @@ export function MobileDockMenu() {
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="size-10 rounded-full p-1"
+                                className="size-12 rounded-full p-1"
+                                aria-label="Abrir menú de usuario"
+                                title="Menú de usuario"
                             >
                                 <Avatar className="size-8 overflow-hidden rounded-full">
                                     <AvatarImage

@@ -1,25 +1,22 @@
 import L from 'leaflet';
 import { Navigation } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     MapContainer,
     Marker,
     Popup,
+    Polyline,
     TileLayer,
     useMap,
     Tooltip,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-
-export type MapLocation = {
-    lat: number;
-    lng: number;
-    label?: string;
-};
+import type { MapLocation } from '@/types/shops';
 
 interface OpenStreetMapProps {
     locations: MapLocation[];
     currentLocation?: MapLocation;
+    selectedLocation?: MapLocation;
     onSelectMarker?: (id: string) => void;
 }
 
@@ -128,21 +125,128 @@ function LocationButton({ location }: { location?: MapLocation }) {
     );
 }
 
+function RoutePath({ from, to }: { from?: MapLocation; to?: MapLocation }) {
+    const map = useMap();
+    const [route, setRoute] = useState<[number, number][]>([]);
+    const fromLat = from?.lat;
+    const fromLng = from?.lng;
+    const toLat = to?.lat;
+    const toLng = to?.lng;
+
+    useEffect(() => {
+        if (
+            fromLat === undefined ||
+            fromLng === undefined ||
+            toLat === undefined ||
+            toLng === undefined
+        ) {
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function loadRoute() {
+            try {
+                const coordinates = [
+                    `${fromLng},${fromLat}`,
+                    `${toLng},${toLat}`,
+                ].join(';');
+
+                const url =
+                    `https://router.project-osrm.org/route/v1/driving/${coordinates}` +
+                    `?overview=full&geometries=geojson`;
+
+                const response = await fetch(url, {
+                    signal: controller.signal,
+                });
+
+                if (!response.ok) {
+                    throw new Error('No se pudo obtener la ruta');
+                }
+
+                const data = await response.json();
+
+                if (data.code !== 'Ok' || !data.routes?.length) {
+                    setRoute([]);
+
+                    return;
+                }
+
+                const coordinantes = data.routes[0].geometry.coordinates;
+
+                const leafletRoute = coordinantes.map(
+                    ([lng, lat]: [number, number]) =>
+                        [lat, lng] as [number, number],
+                );
+
+                setRoute(leafletRoute);
+
+                if (leafletRoute.length > 0) {
+                    map.fitBounds(leafletRoute, {
+                        padding: [40, 40],
+                        animate: true,
+                    });
+                }
+            } catch (error) {
+                if (
+                    error instanceof DOMException &&
+                    error.name === 'AbortError'
+                ) {
+                    return;
+                }
+
+                console.error('Error obteniendo ruta: ', error);
+                setRoute([]);
+            }
+        }
+
+        void loadRoute();
+
+        return () => {
+            controller.abort();
+        };
+    }, [fromLat, fromLng, toLat, toLng, map]);
+
+    if (
+        fromLat === undefined ||
+        fromLng === undefined ||
+        toLat === undefined ||
+        toLng === undefined ||
+        route.length === 0
+    ) {
+        return null;
+    }
+
+    return (
+        <Polyline
+            positions={route}
+            pathOptions={{
+                color: '#000000',
+                weight: 5,
+                opacity: 0.8,
+            }}
+        />
+    );
+}
+
 export default function OpenStreetMap({
     locations,
     currentLocation,
+    selectedLocation,
     onSelectMarker,
 }: OpenStreetMapProps) {
+    const currentLatitude = currentLocation?.lat;
+    const currentLongitude = currentLocation?.lng;
     const defaultLocation = useMemo<[number, number]>(() => {
-        if (currentLocation) {
-            return [currentLocation.lat, currentLocation.lng];
+        if (currentLatitude !== undefined && currentLongitude !== undefined) {
+            return [currentLatitude, currentLongitude];
         }
 
         return [20.6597, -103.23496];
-    }, [currentLocation?.lat, currentLocation?.lng]);
+    }, [currentLatitude, currentLongitude]);
 
     return (
-        <div className="h-[500px] w-full">
+        <div className="h-full min-h-[420px] w-full lg:min-h-[500px]">
             <MapContainer
                 center={defaultLocation}
                 zoom={14}
@@ -158,6 +262,8 @@ export default function OpenStreetMap({
                 <MapCenter location={currentLocation} />
 
                 <LocationButton location={currentLocation} />
+
+                <RoutePath from={currentLocation} to={selectedLocation} />
 
                 {currentLocation && (
                     <Marker
@@ -175,9 +281,9 @@ export default function OpenStreetMap({
                     </Marker>
                 )}
 
-                {locations.map((location, index) => (
+                {locations.map((location) => (
                     <Marker
-                        key={`${location.lat}-${location.lng}-${index}`}
+                        key={location.id}
                         position={[location.lat, location.lng]}
                         icon={shopIcon}
                         eventHandlers={{

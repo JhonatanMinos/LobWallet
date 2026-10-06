@@ -7,56 +7,74 @@ import {
     ResizablePanel,
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useShopSearch } from '@/hooks/useShopSearch';
 import { index as store } from '@/routes/store';
+import type { ShopLocation, ShopsResponse, UserLocation } from '@/types/shops';
 import ShopDetail from './ShopDetail';
 import ShopList from './ShopList';
-import { ShopsResponse, UserLocation } from '@/types/shops';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface OpenStreetMapLazyProps {
     shops: ShopsResponse;
     location: UserLocation | null;
 }
 
-export default function OpenStreetMapLazy({
-    shops,
-    location,
-}: OpenStreetMapLazyProps) {
+export default function Maps({ shops, location }: OpenStreetMapLazyProps) {
     const [selectedShop, setSelectedShop] = useState<ShopLocation | null>(null);
     const { searchQuery, setSearchQuery, filteredShops } = useShopSearch(
-        shops?.tiendas,
+        shops?.tiendas ?? [],
     );
-    const isDesktop = useMediaQuery('(min-width: 1024px)');
+    const isDesktop = !useIsMobile();
 
     const locations = useMemo(() => {
-        return filteredShops.map((tienda) => ({
-            id: tienda.codigo,
-            lat: Number(tienda.latitud),
-            lng: Number(tienda.longitud),
-            label: tienda.tienda,
-        }));
+        return filteredShops
+            .map((shop) => ({
+                id: shop.codigo,
+                lat: Number(shop.latitud),
+                lng: Number(shop.longitud),
+                label: shop.tienda,
+            }))
+            .filter(
+                (location) =>
+                    Number.isFinite(location.lat) &&
+                    Number.isFinite(location.lng),
+            );
     }, [filteredShops]);
 
     const currentLocation = location
         ? {
+              id: 'current-location',
               lat: location.latitude,
               lng: location.longitude,
           }
         : undefined;
 
-    const handleMarkerSelect = (locationId: string) => {
-        const shop = filteredShops.find((s) => s.codigo === locationId);
-
-        if (shop) {
-            setSelectedShop(shop);
+    const selectedLocation = useMemo(() => {
+        if (!selectedShop) {
+            return undefined;
         }
+
+        const location = locations.find(
+            (item) => item.id === selectedShop.codigo,
+        );
+
+        return location;
+    }, [locations, selectedShop]);
+
+    const handleMarkerSelect = (locationId: string) => {
+        const shop = filteredShops.find((item) => item.codigo === locationId);
+
+        if (!shop) {
+            return;
+        }
+
+        setSelectedShop(shop);
     };
 
     return (
         <>
             <Head title="Tiendas" />
-            <div className="m-5">
+            <div className="mx-4 my-4 sm:m-5">
                 <SearchForm
                     value={searchQuery}
                     onValueChange={setSearchQuery}
@@ -65,16 +83,16 @@ export default function OpenStreetMapLazy({
                 />
                 <ResizablePanelGroup
                     orientation={isDesktop ? 'horizontal' : 'vertical'}
-                    className="min-h-[650px] flex-1 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60"
+                    className="min-h-[560px] flex-1 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 lg:min-h-[650px]"
                 >
                     <ResizablePanel
                         defaultSize={60}
                         minSize={30}
-                        className="relative h-full w-full overflow-hidden"
+                        className="relative min-h-0 overflow-hidden"
                     >
                         <Suspense
                             fallback={
-                                <div className="flex h-[500px] items-center justify-center rounded-xl bg-zinc-100">
+                                <div className="flex h-full min-h-[500px] items-center justify-center rounded-xl bg-zinc-100">
                                     <span className="text-sm text-zinc-500">
                                         Cargando mapa...
                                     </span>
@@ -84,6 +102,7 @@ export default function OpenStreetMapLazy({
                             <OpenStreetMap
                                 locations={locations}
                                 currentLocation={currentLocation}
+                                selectedLocation={selectedLocation}
                                 onSelectMarker={handleMarkerSelect}
                             />
                         </Suspense>
@@ -91,7 +110,7 @@ export default function OpenStreetMapLazy({
                     <ResizableHandle withHandle />
                     <ResizablePanel
                         defaultSize={40}
-                        className="flex h-full items-center justify-center p-6"
+                        className="min-h-0 overflow-hidden p-4"
                     >
                         {selectedShop ? (
                             <ShopDetail
@@ -111,7 +130,7 @@ export default function OpenStreetMapLazy({
     );
 }
 
-OpenStreetMapLazy.layout = {
+Maps.layout = {
     breadcrumbs: [
         {
             title: 'Mapa',

@@ -5,7 +5,7 @@ export type UserLocation = {
     timestamp?: number;
 };
 
-export interface ShopLocation {
+export type ShopLocation = {
     codigo: string;
     tienda: string;
     calle: string;
@@ -15,8 +15,15 @@ export interface ShopLocation {
     horario: string;
     latitud: string;
     longitud: string;
-}
+};
 
 export type ShopsResponse = {
     tiendas: ShopLocation[];
+};
+
+export type MapLocation = {
+    id: string;
+    lat: number;
+    lng: number;
+    label?: string;
 };

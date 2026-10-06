@@ -1,4 +1,5 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { ShopLocation } from '@/types/shops';
+import { useState, useMemo } from 'react';
 
 export function useShopSearch(shops: ShopLocation[] = []) {
     const [searchQuery, setSearchQuery] = useState('');

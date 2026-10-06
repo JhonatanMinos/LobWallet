@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
-const MOBILE_BREAKPOINT = 768;
+// Keep the breakpoint aligned with the responsive layouts and map behavior.
+const MOBILE_BREAKPOINT = 1024;
 
 const mql =
     typeof window === 'undefined'

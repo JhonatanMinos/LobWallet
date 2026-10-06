@@ -2,13 +2,6 @@ import { router } from '@inertiajs/react';
 
 let syncing = false;
 
-function getCsrfToken(): string | null {
-    return (
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? null
-    );
-}
-
 export async function syncWallet(): Promise<boolean> {
     if (syncing) {
         return false;
@@ -24,9 +17,9 @@ export async function syncWallet(): Promise<boolean> {
         const response = await fetch('/sync', {
             method: 'POST',
             headers: {
-                Accept: 'applications/json',
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'HTMLHttpRequest',
+                'X-Requested-With': 'XMLHttpRequest',
                 ...(csrf
                     ? {
                           'X-CSRF-TOKEN': csrf,

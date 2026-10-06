@@ -1,17 +1,25 @@
 import { useRef, useState } from 'react';
+import type { PropsWithChildren, TouchEvent } from 'react';
 
-export default function PullToRefresh({ onRefresh, children }) {
+type PullToRefreshProps = PropsWithChildren<{
+    onRefresh: () => Promise<unknown>;
+}>;
+
+export default function PullToRefresh({
+    onRefresh,
+    children,
+}: PullToRefreshProps) {
     const startY = useRef(0);
     const [pullDistance, setPullDistance] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
 
-    const handleTouchStart = (e) => {
+    const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
         if (window.scrollY === 0) {
             startY.current = e.touches[0].clientY;
         }
     };
 
-    const handleTouchMove = (e) => {
+    const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
         if (window.scrollY !== 0 || refreshing) {
             return;
         }
