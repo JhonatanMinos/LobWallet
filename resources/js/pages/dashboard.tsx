@@ -5,7 +5,7 @@ import {
     RefreshCw,
     ShoppingBag,
 } from 'lucide-react';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Barcode from 'react-barcode';
 import { toast } from 'sonner';
 import { dashboard } from '@/routes';
@@ -43,6 +43,7 @@ export default function Dashboard() {
     const [syncStatus, setSyncStatus] = useState<
         'idle' | 'syncing' | 'updated' | 'error'
     >('idle');
+    const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
     const mounted = useRef(false);
     const refreshingRef = useRef(false);
@@ -59,6 +60,7 @@ export default function Dashboard() {
         try {
             const hasChanges = await syncWallet();
             setSyncStatus(hasChanges ? 'updated' : 'idle');
+            setLastSyncedAt(new Date());
 
             if (notify) {
                 toast.success(
@@ -104,6 +106,13 @@ export default function Dashboard() {
     const serialCard = card?.card;
     const balance = Number(account?.balance ?? 0);
 
+    const lastSyncLabel = lastSyncedAt
+        ? `Actualizada a las ${lastSyncedAt.toLocaleTimeString('es-MX', {
+              hour: '2-digit',
+              minute: '2-digit',
+          })}`
+        : 'Datos disponibles en el dispositivo';
+
     const formatAmount = (amount: number) => {
         return amount.toLocaleString('es-MX', {
             minimumFractionDigits: 2,
@@ -114,22 +123,22 @@ export default function Dashboard() {
     return (
         <>
             <Head title="Wallet" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <section className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 shadow-[0_0_25px_-5px_rgba(255,255,255,0.05)] backdrop-blur-sm sm:p-5">
+            <div className="flex h-full min-h-full flex-1 flex-col gap-4 overflow-x-hidden rounded-xl p-3 sm:p-4">
+                <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
                     {/* Card header */}
                     <div className="mb-4 flex items-start justify-between">
                         <div className="min-w-0 space-y-1">
                             <div className="flex items-center space-x-2">
-                                <h2 className="text-lg font-semibold tracking-tight text-zinc-50">
-                                    Tarjeta LOB
+                                <h2 className="text-lg font-semibold tracking-tight text-card-foreground">
+                                    Wallet LOB
                                 </h2>
 
-                                <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
+                                <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                     Digital
                                 </span>
                             </div>
 
-                            <p className="text-xs leading-relaxed text-zinc-400">
+                            <p className="text-xs leading-relaxed text-muted-foreground">
                                 En tienda mostrar esta tarjeta para hacer uso
                                 del saldo disponible.
                             </p>
@@ -140,7 +149,7 @@ export default function Dashboard() {
                                 type="button"
                                 onClick={() => void refreshWallet(true)}
                                 disabled={refreshing}
-                                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800/80 px-3 text-xs font-medium text-zinc-200 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border bg-muted px-3 text-xs font-medium text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                                 aria-label="Actualizar wallet"
                             >
                                 <RefreshCw
@@ -152,7 +161,7 @@ export default function Dashboard() {
                             </button>
 
                             <span
-                                className={`text-[10px] ${
+                                className={`text-right text-[10px] ${
                                     syncStatus === 'error'
                                         ? 'text-rose-400'
                                         : syncStatus === 'syncing'
@@ -171,11 +180,14 @@ export default function Dashboard() {
                                         ? 'Actualizada'
                                         : 'Al día'}
                             </span>
+                            <span className="mt-0.5 block text-muted-foreground">
+                                {lastSyncLabel}
+                            </span>
                         </div>
                     </div>
 
                     {/* Digital voucher */}
-                    <div className="flex flex-col items-center justify-center rounded-xl bg-white p-6 text-center text-zinc-950 shadow-[0_20px_30px_-10px_rgba(0,0,0,0.5),0_0_1px_1px_rgba(255,255,255,0.05)] transition-transform duration-200 hover:scale-[1.01]">
+                    <div className="flex w-full flex-col items-center justify-center rounded-xl bg-white p-4 text-center text-zinc-950 shadow-[0_20px_30px_-10px_rgba(0,0,0,0.5),0_0_1px_1px_rgba(255,255,255,0.05)] transition-transform duration-200 hover:scale-[1.01] sm:p-6">
                         {serialCard ? (
                             <>
                                 {/* Balance */}
@@ -191,20 +203,19 @@ export default function Dashboard() {
                                 </div>
 
                                 {/* Barcode */}
-                                <div className="flex w-full items-center justify-center space-y-2.5">
-                                    <div className="flex w-full items-center justify-center overflow-hidden rounded-sm bg-white">
-                                        <Barcode
-                                            value={serialCard}
-                                            format="CODE128"
-                                            width={2}
-                                            height={85}
-                                            displayValue={false}
-                                            background="#ffffff"
-                                            lineColor="#09090b"
-                                            margin={0}
-                                            fontSize={12}
-                                        />
-                                    </div>
+                                <div className="flex w-full max-w-md items-center justify-center space-y-2.5 overflow-hidden rounded-sm bg-white px-1">
+                                    <Barcode
+                                        value={serialCard}
+                                        format="CODE128"
+                                        width={1.7}
+                                        height={78}
+                                        displayValue={false}
+                                        background="#ffffff"
+                                        lineColor="#09090b"
+                                        margin={0}
+                                        fontSize={12}
+                                        className="h-auto max-w-full"
+                                    />
                                 </div>
 
                                 {/* Card status */}
@@ -216,7 +227,7 @@ export default function Dashboard() {
                                 </div>
                             </>
                         ) : (
-                            <div className="flex min-h-[250px] w-full flex-col items-center justify-center">
+                            <div className="flex min-h-[220px] w-full flex-col items-center justify-center">
                                 <CreditCard className="mb-3 h-10 w-10 text-zinc-300" />
 
                                 <p className="text-sm font-medium text-zinc-700">
@@ -235,7 +246,7 @@ export default function Dashboard() {
                         <button
                             type="button"
                             onClick={() => router.get(accountCard.create().url)}
-                            className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-medium whitespace-nowrap text-zinc-50 shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto"
+                            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-foreground px-4 py-2 text-xs font-medium whitespace-nowrap text-background shadow-sm transition-colors hover:opacity-90 sm:w-auto"
                         >
                             <CreditCard className="h-3.5 w-3.5 text-zinc-400" />
 
@@ -244,25 +255,22 @@ export default function Dashboard() {
                     </div>
                 </section>
                 {/* Recent activity */}
-                <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 shadow-[0_0_25px_-5px_rgba(255,255,255,0.05)] backdrop-blur-sm sm:p-5">
+                <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
                     <div className="mb-4 flex items-center justify-between">
                         <div>
-                            <h3 className="text-sm font-semibold tracking-tight text-zinc-50">
+                            <h3 className="text-sm font-semibold tracking-tight text-card-foreground">
                                 Últimas actividades
                             </h3>
 
-                            <p className="text-[11px] text-zinc-400">
+                            <p className="text-[11px] text-muted-foreground">
                                 Historial reciente de transacciones y uso de
                                 saldo
                             </p>
                         </div>
 
-                        <button
-                            type="button"
-                            className="text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-200"
-                        >
-                            Ver todo
-                        </button>
+                        <span className="text-[11px] font-medium text-muted-foreground">
+                            Últimos 10
+                        </span>
                     </div>
 
                     {/* Transactions */}
@@ -277,7 +285,7 @@ export default function Dashboard() {
                                         className="group flex items-center justify-between gap-3 py-3"
                                     >
                                         <div className="flex items-center space-x-3">
-                                            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors group-hover:border-zinc-700">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground transition-colors group-hover:border-ring">
                                                 {isPositive ? (
                                                     <CircleDollarSign className="h-4 w-4 text-emerald-400" />
                                                 ) : (
@@ -286,11 +294,11 @@ export default function Dashboard() {
                                             </div>
 
                                             <div className="space-y-0.5">
-                                                <p className="text-xs font-medium text-zinc-50 capitalize">
+                                                <p className="text-xs font-medium text-card-foreground capitalize">
                                                     {transaction.motion}
                                                 </p>
 
-                                                <p className="font-mono text-[11px] text-zinc-400">
+                                                <p className="font-mono text-[11px] text-muted-foreground">
                                                     Cuenta #
                                                     {transaction.account_id}
                                                 </p>
@@ -313,7 +321,7 @@ export default function Dashboard() {
                                                 )}
                                             </span>
 
-                                            <span className="block text-[10px] text-zinc-500">
+                                            <span className="block text-[10px] text-muted-foreground">
                                                 Movimiento
                                             </span>
                                         </div>
@@ -322,7 +330,7 @@ export default function Dashboard() {
                             })
                         ) : (
                             <div className="py-8 text-center">
-                                <p className="text-xs text-zinc-400">
+                                <p className="text-xs text-muted-foreground">
                                     No hay actividades recientes.
                                 </p>
                             </div>

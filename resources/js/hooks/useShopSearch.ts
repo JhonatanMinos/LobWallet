@@ -1,5 +1,5 @@
-import { ShopLocation } from '@/types/shops';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import type { ShopLocation } from '@/types/shops';
 
 export function useShopSearch(shops: ShopLocation[] = []) {
     const [searchQuery, setSearchQuery] = useState('');

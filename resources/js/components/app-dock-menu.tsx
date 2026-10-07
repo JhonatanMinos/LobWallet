@@ -19,15 +19,15 @@ export function MobileDockMenu() {
     const page = usePage();
     const { auth } = page.props;
     const getInitials = useInitials();
-    const { whenCurrentUrl } = useCurrentUrl();
+    const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 
     return (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
             <nav
                 aria-label="Main navigation"
                 className={cn(
-                    'pointer-events-auto mx-auto w-fit max-w-[calc(100vw-1rem)]',
-                    'flex items-center gap-1 p-2 sm:gap-2',
+                    'pointer-events-auto mx-auto max-w-[calc(100vw-1rem)]',
+                    'flex w-[calc(100vw-1rem)] items-center gap-1 p-2 sm:w-auto sm:gap-2',
                     'rounded-full',
                     'bg-white/80 dark:bg-black/35',
                     'backdrop-blur-2xl backdrop-saturate-200',
@@ -41,25 +41,26 @@ export function MobileDockMenu() {
                         key={title}
                         href={href}
                         aria-label={title}
+                        aria-current={isCurrentUrl(href) ? 'page' : undefined}
                         className={cn(
-                            'flex h-14 min-w-14 flex-col items-center justify-center gap-0.5 px-1',
+                            'flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 sm:min-w-14 sm:flex-none',
                             'rounded-full text-neutral-700 transition-colors dark:text-neutral-300',
                             'hover:bg-neutral-200/70 hover:text-neutral-950 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
                             whenCurrentUrl(href, activeItemStyles),
                         )}
                     >
                         {Icon && <Icon className="h-5 w-5" />}
-                        <span className="text-[10px] leading-none font-medium">
+                        <span className="max-w-full truncate text-[10px] leading-none font-medium">
                             {title}
                         </span>
                     </Link>
                 ))}
-                <div className="ml-auto flex items-center space-x-2">
+                <div className="flex shrink-0 items-center border-l border-neutral-300/70 pl-1 dark:border-white/15">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="size-12 rounded-full p-1"
+                                className="size-12 rounded-full p-1 focus-visible:ring-2 focus-visible:ring-ring"
                                 aria-label="Abrir menú de usuario"
                                 title="Menú de usuario"
                             >

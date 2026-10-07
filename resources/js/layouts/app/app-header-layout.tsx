@@ -17,7 +17,7 @@ export default function AppHeaderLayout({
                 <>
                     {/* Contenido con padding inferior suficiente para el dock flotante */}
                     <AppContent
-                        className="mt-4 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom,0px))]"
+                        className="mt-4 pt-4 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))]"
                         variant="header"
                     >
                         {children}
