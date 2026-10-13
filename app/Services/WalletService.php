@@ -6,6 +6,15 @@ use Illuminate\Support\Facades\DB;
 
 class WalletService
 {
+    public function resetSnapshot(): void
+    {
+        DB::transaction(function (): void {
+            foreach (['account_owner', 'transactions', 'cards', 'owners', 'accounts', 'mobile_session'] as $table) {
+                DB::table($table)->delete();
+            }
+        });
+    }
+
     public function dashboard(): array
     {
         return [
@@ -15,7 +24,7 @@ class WalletService
                     'account',
                     'balance',
                     'activo',
-                    'pin'
+                    'pin',
                 ])
                 ->first(),
 

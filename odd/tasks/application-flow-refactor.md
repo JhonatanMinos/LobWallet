@@ -18,12 +18,12 @@ Refactor synchronization, session/cache lifecycle, and wallet reads without rede
 - Strategy: `ask-on-risk`; user selected `feature-branch-chain` (option 2). Verify the complete feature on a dedicated local branch; remote tracker/child PRs remain unauthorized.
 - Initial boundary: `d173f2d6db8797b94d618c1002879727d41a700f` on `ux/ui-consistency`.
 - Active local branch: `refactor/application-flow`; created without publishing or staging existing user changes.
-- Running authored changes: 0. No implementation commits or PRs created.
+- Running authored changes: 773 (695 source/tests + 78 task-document lines) in local commit `0717b68637b3e38f567775e3657ae689c1b986dd`; no PRs or publishing.
 - RDD: enabled by default; candidate consent remains separate. Assess each work-unit commit against the last reviewed boundary and follow native returned continuations.
 
 ## Tasks
 
-- [ ] **FLOW-001 — Repair sync ingestion and dashboard refresh.**
+- [x] **FLOW-001 — Repair sync ingestion and dashboard refresh.**
   - Route: delegated; backend/frontend behavior and tests require multiple non-trivial files and preparation reading.
   - Files: `app/Services/SyncService.php`, `resources/js/services/sync.ts`, `tests/Feature/Sync/SyncFlowTest.php`, `tests/frontend/sync.test.ts`, `tests/frontend/dashboard-sync.test.tsx`.
   - Return accurate `has_changes`, reload singular `account`/`card` and `transactions`, and match the ownership pivot by both key columns.
@@ -36,16 +36,24 @@ Refactor synchronization, session/cache lifecycle, and wallet reads without rede
   - Actual source/tests: 695 authored lines (418 backend, 277 frontend). Coverage includes offline preservation, incremental cursor, rollback and cached first rendering. No schema changes.
   - One honest future-PR slicing pass: backend and frontend are coherent slices; backend is 18 lines above the nominal 400-line PR budget. No remote PR is authorized; preserve coverage and seek a size exception if that backend slice is later published unsplit.
   - Rollback: revert this task's two production-file changes and remove its three new tests, without affecting unrelated user changes.
-  - Local work-unit commit and native assessment/review: pending; do not confuse green tests with review consent or approval.
+  - Commit: `0717b68637b3e38f567775e3657ae689c1b986dd`. Native assessment after explicit exclusion of pre-existing untracked files: medium, `review_due=false`, `under_budget`; no START, consent, or approval. Keep `d173f2d6db8797b94d618c1002879727d41a700f` as the pending slice boundary.
 
 - [ ] **FLOW-002 — Reconcile authenticated identity and local cache lifecycle.**
   - Route: delegated; auth/provider/sync behavior and tests require multiple non-trivial files.
-  - Files: `app/Services/AuthService.php`, `app/Providers/FortifyServiceProvider.php`, `app/Services/SyncService.php`, `tests/Feature/Auth/RemoteSessionLifecycleTest.php`, `tests/Feature/Sync/SyncIdentityTest.php`.
+  - Files: `app/Services/AuthService.php`, `app/Providers/FortifyServiceProvider.php`, `app/Services/SyncService.php`, `app/Services/WalletService.php` (cache reset only), `tests/Feature/Auth/RemoteSessionLifecycleTest.php`, `tests/Feature/Sync/SyncIdentityTest.php`, `tests/Feature/Sync/SyncFlowTest.php` (fixture updates only).
+  - Keep responsibilities separated: AuthService coordinates credentials/session lifecycle, WalletService resets its cached wallet snapshot, and SyncService validates identity before ingestion. Do not create a circular auth/sync dependency or change wallet read selection in this task.
   - Wire logout cleanup, prevent wallet/cursor leakage across successful account changes, validate stored remote identity against the Laravel session, and prevent mixed credentials after local persistence failure.
   - Acceptance: logout removes remote credentials and wallet/cursor cache; account switch cannot expose the prior snapshot; mismatched identities are rejected before API access; existing two-factor behavior and user/passkey records remain intact.
   - Test-first: observe RED for lifecycle/identity cases with faked HTTP and stray requests prohibited, then GREEN and refactor.
   - Checks: `vendor/bin/phpunit tests/Feature/Auth/RemoteSessionLifecycleTest.php`; `vendor/bin/phpunit tests/Feature/Sync`; focused normalizers/checks.
   - Forecast: 280–420 lines. Commit, observed checks, risk and review outcome: pending.
+  - Writer stopped before changing any files: existing `SyncFlowTest.php` fixtures lack a Laravel authenticated session, and the cursor-isolation test switches only the persisted remote identity. The new identity guard would correctly reject those fixtures.
+  - User explicitly answered Approve: allow fixture-only updates in `tests/Feature/Sync/SyncFlowTest.php` to authenticate service tests, retain the guest test, and switch both identities for cursor isolation. Resume the same writer with this bounded additional surface.
+  - Implemented: stage remote credentials until Laravel Login (including 2FA); logout/account switch clears snapshot and cursors; validate remote/session identities before sync. Preserve local users, passkeys and 2FA. Synchronous SQL/file failures restore previous credentials; compensation is not crash-atomic.
+  - Observed RED: lifecycle 14 tests with 10 failures/1 error; sync 35 tests with 6 failures/8 errors. Final normalized GREEN: lifecycle 20/140, sync 40/140, dashboard 6/40, frontend 17/3 files; types, lint, scoped Pint and diff checks passed. Parent reran lifecycle 20/140 successfully.
+  - Scoped PHPStan: one pre-existing `WalletService::dashboard()` missing iterable value-type error; no errors in modified AuthService, provider or SyncService. Wallet read typing belongs to FLOW-003; full unsafe PHP suite remains skipped.
+  - Actual task-authored changes: 931 lines (849 additions, 82 deletions), excluding preserved prior AuthService edits. The larger coherent unit covers 2FA publication and storage compensation; retain coverage rather than code-golf. Runtime boundary is exercised by fake-HTTP Fortify lifecycle tests; no device or live API proof.
+  - Rollback: remove this task's production changes, two new tests and three sync fixture additions, retaining FLOW-001 and prior edits. Functional proof complete; commit and native review pending, so checkbox remains open.
 
 - [ ] **FLOW-003 — Restrict local wallet reads to the authenticated owner.**
   - Route: delegated; service/controller queries and isolation tests require multiple non-trivial files.
@@ -72,7 +80,8 @@ Refactor synchronization, session/cache lifecycle, and wallet reads without rede
 
 - Read-only explorer completed; parent spot-check confirmed missing `has_changes`, plural reload keys, and incomplete ownership pivot key.
 - Existing initial rendering is local-first and will be preserved.
-- FLOW-001 implementation and focused checks are complete; close its local work-unit commit and follow the native assessment before continuing FLOW-002. Do not alter session timeout.
+- FLOW-001 committed and assessed as medium/under-budget. FLOW-002 implementation and focused functional proof are complete; close its work-unit commit and native assessment before FLOW-003. Other mobile readiness improvements remain outside this feature.
 - Session lifetime inquiry: `.env:34` declares `SESSION_LIFETIME=120`, read by `config/session.php:35` in idle minutes; remote token expiry is separate and not tracked locally. Do not change the timeout as part of this refactor.
+- Verified caveat: five-minute dashboard polling can renew Laravel session activity without user interaction; remember-me can restore authentication after session expiration. NativePHP Android templates override the session driver to file, but no lifetime override was found. An installed device's effective timeout was not inspected.
 - Engram mirror: `odd/application-flow-refactor/tasks` (full document and this locator).
 

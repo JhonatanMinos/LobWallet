@@ -35,10 +35,12 @@ class SyncFlowTest extends TestCase
         $this->app->instance(ApiService::class, new ApiService('https://wallet-api.test'));
         $this->user = User::factory()->create();
         $this->storeRemoteUser($this->user);
+        $this->actingAs($this->user);
     }
 
     public function test_guests_cannot_sync(): void
     {
+        $this->app['auth']->forgetGuards();
         $this->postJson(route('sync'))->assertUnauthorized();
         Http::assertNothingSent();
         $this->assertDatabaseCount('mobile_session', 0);
@@ -166,6 +168,7 @@ class SyncFlowTest extends TestCase
         $this->cursor($this->user, '2026-10-13 08:00:00');
         $this->cursor($other, '2026-10-13 09:00:00');
         $this->storeRemoteUser($other);
+        $this->actingAs($other);
         $this->fakeDelta(['sync_timestamp' => '2026-10-13 11:00:00']);
 
         $this->sync();

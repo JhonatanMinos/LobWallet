@@ -23,7 +23,7 @@ class SyncService
             throw new \RuntimeException('Usuario no autenticado.');
         }
 
-        $user = $this->auth->user();
+        $user = $this->auth->authenticatedUser();
 
         $session = MobileSession::where('user_id', $user['id'])->first();
 
