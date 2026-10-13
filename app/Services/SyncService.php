@@ -12,11 +12,14 @@ class SyncService
         protected AuthService $auth,
     ) {}
 
+    /**
+     * @return array{success: true, timestamp: string, has_changes: bool}
+     */
     public function sync(): array
     {
         $token = $this->auth->token();
 
-        if (!$token) {
+        if (! $token) {
             throw new \RuntimeException('Usuario no autenticado.');
         }
 
@@ -27,16 +30,17 @@ class SyncService
         $lastSync = $session?->last_sync_at;
 
         $response = $this->api->get(
-            '/sync?since=' . urlencode($lastSync ?? ''),
-            $token
+            '/sync',
+            $token,
+            ['since' => $lastSync?->toDateTimeString() ?? ''],
         );
 
-
-        DB::transaction(function () use ($response, $user) {
-
+        $hasChanges = DB::transaction(function () use ($response, $user): bool {
+            $hasChanges = false;
 
             foreach ($response['accounts'] ?? [] as $account) {
-                DB::table('accounts')->updateOrInsert(
+                $hasChanges = $this->upsertWalletRow(
+                    'accounts',
                     [
                         'id' => $account['id'],
                     ],
@@ -47,13 +51,14 @@ class SyncService
                         'pin' => $account['pin'] ?? null,
                         'closes' => $account['cierre'] ?? null,
                         'created_at' => $account['created_at'],
-                        'updated_at' => $account['updated_at']
+                        'updated_at' => $account['updated_at'],
                     ]
-                );
+                ) || $hasChanges;
             }
 
             foreach ($response['cards'] ?? [] as $card) {
-                DB::table('cards')->updateOrInsert(
+                $hasChanges = $this->upsertWalletRow(
+                    'cards',
                     [
                         'id' => $card['id'],
                     ],
@@ -62,13 +67,14 @@ class SyncService
                         'card' => $card['tarjeta'],
                         'status' => $card['estatus'],
                         'created_at' => $card['created_at'],
-                        'updated_at' => $card['updated_at']
+                        'updated_at' => $card['updated_at'],
                     ]
-                );
+                ) || $hasChanges;
             }
 
             foreach ($response['transaction'] ?? [] as $transaction) {
-                DB::table('transactions')->updateOrInsert(
+                $hasChanges = $this->upsertWalletRow(
+                    'transactions',
                     [
                         'id' => $transaction['id'],
                     ],
@@ -78,14 +84,15 @@ class SyncService
                         'motion' => $transaction['movimiento'],
                         'amount' => $transaction['monto'],
                         'created_at' => $transaction['created_at'],
-                        'updated_at' => $transaction['updated_at']
+                        'updated_at' => $transaction['updated_at'],
 
                     ]
-                );
+                ) || $hasChanges;
             }
 
             foreach ($response['owner'] ?? [] as $owner) {
-                DB::table('owners')->updateOrInsert(
+                $hasChanges = $this->upsertWalletRow(
+                    'owners',
                     [
                         'id' => $owner['id'],
                     ],
@@ -95,20 +102,20 @@ class SyncService
                         'last_name' => $owner['apellidos'],
                         'movil' => $owner['movil'],
                         'created_at' => $owner['created_at'],
-                        'updated_at' => $owner['updated_at']
+                        'updated_at' => $owner['updated_at'],
                     ]
-                );
+                ) || $hasChanges;
             }
 
             foreach ($response['accountOwner'] ?? [] as $accountOwner) {
-                DB::table('account_owner')->updateOrInsert(
+                $hasChanges = $this->upsertWalletRow(
+                    'account_owner',
                     [
                         'account_id' => $accountOwner['account_id'],
-                    ],
-                    [
                         'owner_id' => $accountOwner['owner_id'],
-                    ]
-                );
+                    ],
+                    [],
+                ) || $hasChanges;
             }
 
             MobileSession::updateOrCreate(
@@ -121,11 +128,36 @@ class SyncService
                     'last_sync_at' => $response['sync_timestamp'],
                 ]
             );
+
+            return $hasChanges;
         });
 
         return [
             'success' => true,
             'timestamp' => $response['sync_timestamp'],
+            'has_changes' => $hasChanges,
         ];
+    }
+
+    /**
+     * @param  non-empty-array<string, int|numeric-string>  $key
+     * @param  array<string, bool|float|int|string|null>  $values
+     */
+    private function upsertWalletRow(string $table, array $key, array $values): bool
+    {
+        $walletValues = $values;
+        unset($walletValues['updated_at']);
+
+        // Transaction dates affect the displayed history and its ordering.
+        if ($table !== 'transactions') {
+            unset($walletValues['created_at']);
+        }
+
+        // Compare using database types, including numeric strings and nullable fields.
+        $hasChanges = ! DB::table($table)->where($key)->where($walletValues)->exists();
+
+        DB::table($table)->updateOrInsert($key, $values);
+
+        return $hasChanges;
     }
 }

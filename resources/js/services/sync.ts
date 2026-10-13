@@ -34,7 +34,7 @@ export async function syncWallet(): Promise<boolean> {
 
         const result = await response.json();
 
-        if (result.has_changes) {
+        if (result.has_changes === true) {
             await reloadWallet();
         }
 
@@ -47,7 +47,7 @@ export async function syncWallet(): Promise<boolean> {
 export function reloadWallet(): Promise<void> {
     return new Promise((resolve, reject) => {
         router.reload({
-            only: ['accounts', 'cards', 'transactions'],
+            only: ['account', 'card', 'transactions'],
             onFinish: () => {
                 resolve();
             },
